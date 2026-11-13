@@ -144,6 +144,15 @@
       max-height: 85vh; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px;
     }
     .stat-box { border-radius: 10px; padding: 8px; text-align: center; font-weight: 800; color: #1F2933; }
+    .ag-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; background: #F1F5F9; padding: 4px; border-radius: 10px; }
+    .ag-tab { border: none; background: transparent; padding: 7px 6px; border-radius: 8px; font-size: 11px; font-weight: 800; color: #475569; cursor: pointer; }
+    .ag-tab.active { background: #1F4E79; color: #fff; }
+    .db-card { border: 1px solid #CBD5E1; border-radius: 10px; padding: 8px 10px; background: #F8FAFC; font-size: 12px; display: flex; flex-direction: column; gap: 4px; }
+    #print-dossie-area { display: none; padding: 24px; font-family: Arial, sans-serif; color: #1F2933; background: #fff; }
+    @media print {
+      body > .app-shell, body > .modal-backdrop { display: none !important; }
+      #print-dossie-area { display: block !important; }
+    }
   </style>
 </head>
 <body>
@@ -585,80 +594,146 @@
 
 </div>
 
-<!-- MODAL AGENTE MULTITAREFA NR-12 (ÁUDIO -> TEXTO + PREENCHIMENTO) -->
+<!-- MODAL AGENTE MULTITAREFA NR-12 (ÁUDIO -> BANCO DE DADOS -> DOSSIÊ & LAUDO) -->
 <div class="modal-backdrop" id="modal-agent">
-  <div class="modal-box" style="max-width:460px;">
+  <div class="modal-box" style="max-width:480px;">
     <div style="display:flex;justify-content:space-between;align-items:center;">
       <div>
-        <strong style="font-size:15px;color:#1F4E79;">🤖 Agente Multitarefa NR-12</strong>
-        <div style="font-size:11px;color:#64748B;">Fale um áudio: vira texto e o agente preenche o laudo em várias etapas</div>
+        <strong style="font-size:15px;color:#1F4E79;">🤖 Agente Multitarefa &amp; Banco NR-12</strong>
+        <div style="font-size:11px;color:#64748B;">Áudio → Banco de Dados organizado → Dossiê Prévio &amp; Laudo</div>
       </div>
       <button class="btn btn-soft btn-sm" onclick="closeAgentModal()">Fechar</button>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-      <button class="btn btn-primary" style="padding:11px;" onclick="startAgentVoice(false)">
-        🎙️ Falar Áudio
-      </button>
-      <button class="btn btn-navy" style="padding:11px;" onclick="startAgentVoice(true)">
-        ➕ Continuar Fala
-      </button>
+    <div class="ag-tabs">
+      <button class="ag-tab active" id="ag-tab-0" onclick="switchAgentTab(0)">🎙️ Comando</button>
+      <button class="ag-tab" id="ag-tab-1" onclick="switchAgentTab(1)">🗄️ Banco (<span id="db-count-badge">0</span>)</button>
+      <button class="ag-tab" id="ag-tab-2" onclick="switchAgentTab(2)">📄 Dossiê Prévio</button>
     </div>
 
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
-      <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#334155;cursor:pointer;">
-        <input type="checkbox" id="agent-autorun" checked style="width:16px;height:16px;" />
-        Executar tarefas automático ao parar de falar
-      </label>
-      <label class="btn btn-soft btn-sm" style="cursor:pointer;">
-        📁 Áudio (.ogg/.mp3)
-        <input type="file" accept="audio/*" style="display:none;" onchange="handleAgentAudioFile(this)" />
-      </label>
-    </div>
-
-    <div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-        <label class="lbl" style="margin:0;">Texto Transcrito para o Agente Ler</label>
-        <button class="btn btn-soft btn-sm" onclick="document.getElementById('agent-prompt').value=''">Limpar</button>
+    <!-- SUB-ABA 0: COMANDO & VOZ -->
+    <div id="ag-panel-0" style="display:flex;flex-direction:column;gap:9px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <button class="btn btn-primary" style="padding:11px;" onclick="startAgentVoice(false)">
+          🎙️ Falar Áudio
+        </button>
+        <button class="btn btn-navy" style="padding:11px;" onclick="startAgentVoice(true)">
+          ➕ Continuar Fala
+        </button>
       </div>
-      <textarea id="agent-prompt" rows="4" placeholder="Ex.: Empresa Metalúrgica Sul Ltda, CNPJ 12.345.678/0001-90, Curitiba PR. Nova máquina Prensa PH-40, fabricante Harlo, tag PR-02, 15 CV, 380V. Ponto de risco zona de prensagem sem proteção, risco de esmagamento e corte nos membros superiores, HRN alto, instalar cortina de luz em até 30 dias. Parada de emergência não conforme."></textarea>
-    </div>
 
-    <div class="h-scroll" style="padding-bottom:2px;">
-      <span class="chip" onclick="fillAgentExample('emp')">+ Ex. Empresa/Máq</span>
-      <span class="chip" onclick="fillAgentExample('risk')">+ Ex. 2 Pontos HRN</span>
-      <span class="chip" onclick="fillAgentExample('chk')">+ Ex. Checklist</span>
-      <span class="chip" onclick="fillAgentExample('sintese')">⚡ Gerar Síntese</span>
-    </div>
-
-    <div style="display:flex;gap:8px;">
-      <button class="btn btn-green" style="flex:1;padding:11px;font-size:13px;" onclick="executeAgentFromBox()">
-        ⚡ Ler Texto &amp; Preencher Tudo
-      </button>
-      <button class="btn btn-danger" id="btn-agent-undo" style="display:none;padding:11px;" onclick="undoAgentAction()">
-        ↩️ Desfazer
-      </button>
-    </div>
-
-    <div id="agent-status" style="font-size:12px;color:#1F4E79;font-weight:700;display:none;"></div>
-    <div id="agent-log" style="display:flex;flex-direction:column;gap:6px;max-height:190px;overflow-y:auto;"></div>
-
-    <details style="border-top:1px solid #E2E8F0;padding-top:8px;">
-      <summary style="font-size:11px;font-weight:700;color:#475569;cursor:pointer;">
-        ⚙️ IA na Nuvem Opcional (Gemini API — Offline funciona sem chave)
-      </summary>
-      <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;">
-        <div style="font-size:11px;color:#64748B;line-height:1.35;">
-          Sem chave, o Agente Multitarefa já funciona 100% offline com a voz nativa do celular. Se quiser entender áudios longos livres ou arquivos de áudio do WhatsApp (.ogg/.mp3), cole sua chave Gemini API:
-        </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#334155;cursor:pointer;">
+          <input type="checkbox" id="agent-autorun" checked style="width:15px;height:15px;" />
+          Executar e catalogar após falar
+        </label>
         <div style="display:flex;gap:6px;">
-          <input type="password" id="agent-gemini-key" placeholder="AIza... (salvo só neste celular)" style="font-size:12px;" onchange="saveGeminiKey()" />
-          <button class="btn btn-soft btn-sm" onclick="saveGeminiKey()">Salvar</button>
+          <label class="btn btn-soft btn-sm" style="cursor:pointer;">
+            📷 Ler Plaqueta
+            <input type="file" accept="image/*" capture="environment" style="display:none;" onchange="handleAgentPhotoFile(this)" />
+          </label>
+          <label class="btn btn-soft btn-sm" style="cursor:pointer;">
+            📁 Áudio
+            <input type="file" accept="audio/*" style="display:none;" onchange="handleAgentAudioFile(this)" />
+          </label>
         </div>
       </div>
-    </details>
+
+      <label style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#1F4E79;cursor:pointer;">
+        <input type="checkbox" id="agent-polish" checked style="width:15px;height:15px;" />
+        ✍️ Converter fala de campo em redação técnica pericial NR-12
+      </label>
+
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <label class="lbl" style="margin:0;">Texto Transcrito para o Agente Ler</label>
+          <button class="btn btn-soft btn-sm" onclick="document.getElementById('agent-prompt').value=''">Limpar</button>
+        </div>
+        <textarea id="agent-prompt" rows="4" placeholder="Fale ou digite naturalmente: dados da empresa/máquina, pontos de risco HRN, cálculos ISO 13855/13857, duplicar máquinas iguais, checklist ou peça 'gerar dossiê' / 'o que falta'..."></textarea>
+      </div>
+
+      <div class="h-scroll" style="padding-bottom:2px;">
+        <span class="chip" onclick="fillAgentExample('emp')">+ Empresa/Máq</span>
+        <span class="chip" onclick="fillAgentExample('risk')">+ Riscos/ISO</span>
+        <span class="chip" onclick="fillAgentExample('clone')">+ Clonar Máq</span>
+        <span class="chip" onclick="fillAgentExample('chk')">+ Checklist</span>
+        <span class="chip" onclick="fillAgentExample('dossie')">📄 Gerar Dossiê</span>
+      </div>
+
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-green" style="flex:1;padding:11px;font-size:13px;" onclick="executeAgentFromBox()">
+          ⚡ Ler, Salvar no Banco &amp; Aplicar
+        </button>
+        <button class="btn btn-danger" id="btn-agent-undo" style="display:none;padding:11px;" onclick="undoAgentAction()">
+          ↩️ Desfazer
+        </button>
+      </div>
+
+      <div id="agent-status" style="font-size:12px;color:#1F4E79;font-weight:700;display:none;"></div>
+      <div id="agent-log" style="display:flex;flex-direction:column;gap:6px;max-height:175px;overflow-y:auto;"></div>
+
+      <details style="border-top:1px solid #E2E8F0;padding-top:8px;">
+        <summary style="font-size:11px;font-weight:700;color:#475569;cursor:pointer;">
+          ⚙️ IA na Nuvem Opcional (Gemini API — Visão Plaqueta + Áudios .ogg)
+        </summary>
+        <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;">
+          <div style="font-size:11px;color:#64748B;line-height:1.35;">
+            Sem chave, todo o Agente Multitarefa, Banco de Dados, Auditoria e Dossiê já funcionam 100% offline. Com chave Gemini API, habilita também leitura de plaquetas por foto e arquivos .ogg/.mp3 do WhatsApp:
+          </div>
+          <div style="display:flex;gap:6px;">
+            <input type="password" id="agent-gemini-key" placeholder="AIza... (salvo só neste celular)" style="font-size:12px;" onchange="saveGeminiKey()" />
+            <button class="btn btn-soft btn-sm" onclick="saveGeminiKey()">Salvar</button>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <!-- SUB-ABA 1: BANCO DE DADOS ORGANIZADO DE ÁUDIOS / CAMPO -->
+    <div id="ag-panel-1" style="display:none;flex-direction:column;gap:8px;">
+      <div style="display:flex;gap:6px;">
+        <input type="text" id="db-search" placeholder="Filtrar banco por máquina, termo ou norma..." oninput="renderFieldDb()" style="font-size:12px;" />
+        <select id="db-cat-filter" onchange="renderFieldDb()" style="max-width:130px;font-size:12px;">
+          <option value="ALL">Todas Cat.</option>
+          <option value="Empresa">Empresa</option>
+          <option value="Máquina">Máquina</option>
+          <option value="Risco/HRN">Risco/HRN</option>
+          <option value="ISO/Cálculo">ISO/Cálculo</option>
+          <option value="Checklist">Checklist</option>
+          <option value="Nota Campo">Nota Campo</option>
+        </select>
+      </div>
+      <div id="db-list" style="display:flex;flex-direction:column;gap:6px;max-height:310px;overflow-y:auto;"></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-navy" style="flex:1;" onclick="switchAgentTab(2);generateAndRenderDossier();">
+          📄 Consolidar em Dossiê Prévio
+        </button>
+        <button class="btn btn-soft btn-sm" onclick="clearFieldDb()">Limpar Banco</button>
+      </div>
+    </div>
+
+    <!-- SUB-ABA 2: DOSSIÊ / RELATÓRIO PRÉVIO & AUDITORIA -->
+    <div id="ag-panel-2" style="display:none;flex-direction:column;gap:8px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+        <button class="btn btn-navy btn-sm" style="padding:9px;" onclick="generateAndRenderDossier()">
+          📄 Atualizar Dossiê
+        </button>
+        <button class="btn btn-amber btn-sm" style="padding:9px;" onclick="copyWhatsappSummary()">
+          💬 Copiar p/ WhatsApp
+        </button>
+        <button class="btn btn-primary btn-sm" style="padding:9px;" onclick="printDossier()">
+          🖨️ Salvar PDF Prévio
+        </button>
+        <button class="btn btn-green btn-sm" style="padding:9px;" onclick="applyDossierToSintese()">
+          📝 Aplicar na Síntese
+        </button>
+      </div>
+      <div id="dossier-preview" style="border:1px solid #CBD5E1;border-radius:10px;padding:10px;background:#F8FAFC;max-height:330px;overflow-y:auto;font-size:12px;line-height:1.4;"></div>
+    </div>
   </div>
 </div>
+
+<!-- ÁREA OCULTA IMPRESSÃO PDF DO DOSSIÊ PRÉVIO -->
+<div id="print-dossie-area"></div>
 
 <!-- MODAL GERENCIADOR DE LAUDOS & OTA -->
 <div class="modal-backdrop" id="modal-laudos">
@@ -1542,7 +1617,7 @@ function openLaudosModal() {
     list.appendChild(row);
   });
   const ver = window.AndroidBridge ? window.AndroidBridge.getAppVersionCode() : 2;
-  document.getElementById('app-ver-label').textContent = 'Versão local: v1.2.0 (build ' + ver + ')';
+  document.getElementById('app-ver-label').textContent = 'Versão local: v1.3.0 (build ' + ver + ')';
   document.getElementById('modal-laudos').classList.add('open');
 }
 function closeLaudosModal() { document.getElementById('modal-laudos').classList.remove('open'); }
@@ -1597,12 +1672,34 @@ window.__onUpdateStatus = function(status, version, notes) {
     alert(notes || 'Sem atualizações pendentes.');
   }
 };
-// ============ AGENTE MULTITAREFA NR-12 (VOZ -> TEXTO -> TAREFAS) ============
+// ============ AGENTE MULTITAREFA NR-12 (VOZ -> BANCO DE DADOS -> DOSSIÊ & LAUDO) ============
+let agentLastRawText = '';
+
+function ensureFieldDb() {
+  if (!Array.isArray(activeReport.fieldDb)) activeReport.fieldDb = [];
+  return activeReport.fieldDb;
+}
+function updateDbBadge() {
+  const b = document.getElementById('db-count-badge');
+  if (b) b.textContent = ensureFieldDb().length;
+}
+function switchAgentTab(idx) {
+  for (let i = 0; i < 3; i++) {
+    const t = document.getElementById('ag-tab-' + i);
+    const p = document.getElementById('ag-panel-' + i);
+    if (t) t.classList.toggle('active', i === idx);
+    if (p) p.style.display = (i === idx) ? 'flex' : 'none';
+  }
+  if (idx === 1) renderFieldDb();
+  if (idx === 2) generateAndRenderDossier();
+}
 function openAgentModal() {
   const k = localStorage.getItem(GEMINI_KEY_STORAGE) || '';
   const keyEl = document.getElementById('agent-gemini-key');
   if (keyEl) keyEl.value = k;
   document.getElementById('btn-agent-undo').style.display = agentUndoSnapshot ? 'inline-flex' : 'none';
+  updateDbBadge();
+  switchAgentTab(0);
   document.getElementById('modal-agent').classList.add('open');
 }
 function closeAgentModal() {
@@ -1612,7 +1709,7 @@ function saveGeminiKey() {
   const k = (document.getElementById('agent-gemini-key')?.value || '').trim();
   if (k) localStorage.setItem(GEMINI_KEY_STORAGE, k);
   else localStorage.removeItem(GEMINI_KEY_STORAGE);
-  setAgentStatus(k ? '🔑 Chave Gemini salva localmente.' : '🔑 Chave removida (modo 100% offline ativo).');
+  setAgentStatus(k ? '🔑 Chave Gemini salva localmente.' : '🔑 Chave removida (modo offline ativo).');
 }
 function setAgentStatus(msg, isErr) {
   const st = document.getElementById('agent-status');
@@ -1635,7 +1732,7 @@ function startAgentVoice(appendMode) {
   agentVoiceAppend = !!appendMode;
   activeVoiceTarget = 'agent-prompt';
   if (window.AndroidBridge && window.AndroidBridge.startVoiceNote) {
-    window.AndroidBridge.startVoiceNote('Fale os dados da empresa, máquina, riscos NR-12 ou checklist...');
+    window.AndroidBridge.startVoiceNote('Fale livremente: máquina, risco, cálculo ISO, checklist ou peça um dossiê...');
   } else {
     alert('Use no celular Android ou digite/cole o texto no campo acima.');
   }
@@ -1643,13 +1740,15 @@ function startAgentVoice(appendMode) {
 function fillAgentExample(kind) {
   const box = document.getElementById('agent-prompt');
   if (kind === 'emp') {
-    box.value = 'Empresa Metalúrgica Sul Brasil Ltda, CNPJ 12.345.678/0001-90, cidade Curitiba - PR. Máquina Prensa Excêntrica PH-40, fabricante Harlo, tag PR#02, área Estamparia, motor 15 CV, 380V, 2 operadores, categoria 4 PLr e.';
+    box.value = 'Empresa Metalúrgica Sul Brasil Ltda, CNPJ 12.345.678/0001-90, Curitiba - PR. Máquina Prensa Excêntrica PH-40, fabricante Harlo, tag PR#02, área Estamparia, motor 15 CV, 380V, 2 operadores, categoria 4 PLr e.';
   } else if (kind === 'risk') {
-    box.value = 'Novo ponto de risco Zona de Prensagem, risco de esmagamento e amputação nos membros superiores, HRN alto LO 8 FE 4 DPH 10 NP 1, instalar cortina de luz e comando bimanual conforme ISO 13855 em até 30 dias. Outro ponto Polias e Correias sem proteção, aprisionamento nas mãos, risco médio, colocar proteção fixa enclausurada em até 60 dias.';
+    box.value = 'Novo ponto de risco Zona de Prensagem sem proteção frontal, risco de esmagamento e amputação nos membros superiores, HRN alto LO 8 FE 4 DPH 10 NP 1, instalar cortina de luz tempo 0,25s resolução 30mm em até 30 dias.';
+  } else if (kind === 'clone') {
+    box.value = 'Clonar máquina atual 3 vezes para tags PR#03, PR#04, PR#05 no setor Estamparia B.';
   } else if (kind === 'chk') {
     box.value = 'Marcar parada de emergência como não conforme, elétrica e aterramento não conforme, capacitação conforme, adicionar checklist: Manual de operação indisponível no setor.';
-  } else if (kind === 'sintese') {
-    box.value = 'Gerar síntese automática do laudo.';
+  } else if (kind === 'dossie') {
+    box.value = 'Gerar dossiê prévio completo e auditar o que falta.';
   }
 }
 function undoAgentAction() {
@@ -1660,7 +1759,7 @@ function undoAgentAction() {
   activeReport = restored;
   agentUndoSnapshot = null;
   document.getElementById('btn-agent-undo').style.display = 'none';
-  saveState(); renderAll();
+  saveState(); renderAll(); updateDbBadge();
   setAgentStatus('↩️ Alterações do Agente desfeitas com sucesso.');
   document.getElementById('agent-log').innerHTML = '';
 }
@@ -1674,6 +1773,262 @@ function snapWeight(num, allowed) {
   let best = allowed[0], diff = Infinity;
   allowed.forEach(a => { const d = Math.abs(a - num); if (d < diff) { diff = d; best = a; } });
   return best;
+}
+
+// Reescrita técnica pericial NR-12 para converter falas de campo
+function polishTechnicalText(raw, isAction) {
+  const s = cleanExtractedVal(raw);
+  if (!s || !document.getElementById('agent-polish')?.checked) return s;
+  if (isAction) {
+    let out = s
+      .replace(/\bcolocar\s+tampa\b/gi, 'Instalar proteção fixa enclausurada conforme ABNT NBR ISO 14120')
+      .replace(/\bprote[çc][aã]o\s+fixa\b/gi, 'proteção física fixa fechada e aparafusada (ABNT NBR ISO 14120 / NR-12.41)')
+      .replace(/\bcortina\s+de\s+luz\b/gi, 'cortina de luz de segurança Tipo 4 monitorada por interface segura (ABNT NBR ISO 13855)')
+      .replace(/\bbimanual\b/gi, 'comando bimanual com simultaneidade monitorada (ABNT NBR 14152)')
+      .replace(/\bsensor\s+na\s+porta\b/gi, 'chave de intertravamento com bloqueio monitorado em Categoria 4 / PL e (ABNT NBR ISO 14119)');
+    return out.charAt(0).toUpperCase() + out.slice(1);
+  }
+  let desc = s
+    .replace(/\bsem\s+tampa\b/gi, 'desprovida de proteção fixa enclausurada')
+    .replace(/\bsem\s+prote[çc][aã]o\b/gi, 'desprovida de sistema de proteção coletiva conforme NR-12')
+    .replace(/\bfio\s+solto\b/gi, 'condutores elétricos expostos sem eletroduto/isolamento adequado (NR-10 / NR-12.3)')
+    .replace(/\boperador\s+bota\s+a\s+m[aã]o\b/gi, 'acesso manual dos membros superiores à zona de perigo durante o ciclo')
+    .replace(/\bt[áa]\s+/gi, 'encontra-se ');
+  return desc.charAt(0).toUpperCase() + desc.slice(1);
+}
+
+// Estimativa de HRN Residual após medidas de engenharia (NR-12 / ISO 12100)
+function calcResidualHrn(r) {
+  const cur = +((r.lo || 0) * (r.fe || 0) * (r.dph || 0) * (r.np || 0)).toFixed(2);
+  const resLo = Math.min(r.lo || 5, 0.1);
+  const resFe = Math.min(r.fe || 4, 2.5);
+  const resDph = Math.min(r.dph || 6, 4);
+  const res = +(resLo * resFe * resDph * Math.min(r.np || 1, 2)).toFixed(2);
+  const lvl = res > 50 ? 'Alto' : (res > 5 ? 'Médio' : 'Baixo');
+  return { atual: cur, residual: res, nivelResidual: lvl };
+}
+
+// Banco de Dados organizado de campo
+function saveFieldDbEntry(rawText, cats, summary, maqLabel) {
+  const db = ensureFieldDb();
+  const clean = (rawText || '').trim();
+  if (!clean) return;
+  const entry = {
+    id: 'db_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+    ts: todayBr() + ' ' + nowTime().slice(0, 5),
+    gps: gpsCity || (gpsLat ? `${gpsLat.toFixed(4)},${gpsLon.toFixed(4)}` : (activeReport.empresa.cidadeUf || '')),
+    maquina: maqLabel || (curMaq().tag || curMaq().nome || 'Geral'),
+    cats: cats && cats.length ? Array.from(new Set(cats)) : ['Nota Campo'],
+    texto: clean,
+    resumo: summary || 'Registro catalogado na memória da vistoria'
+  };
+  db.unshift(entry);
+  updateDbBadge();
+}
+function deleteFieldDbItem(id) {
+  activeReport.fieldDb = ensureFieldDb().filter(x => x.id !== id);
+  saveState(); renderFieldDb(); updateDbBadge();
+}
+function clearFieldDb() {
+  if (!confirm('Limpar todos os registros de áudio/campo deste laudo?')) return;
+  activeReport.fieldDb = [];
+  saveState(); renderFieldDb(); updateDbBadge();
+}
+function renderFieldDb() {
+  const wrap = document.getElementById('db-list');
+  if (!wrap) return;
+  const q = normTxt(document.getElementById('db-search')?.value || '');
+  const cat = document.getElementById('db-cat-filter')?.value || 'ALL';
+  const list = ensureFieldDb().filter(it => {
+    const okCat = cat === 'ALL' || (it.cats || []).includes(cat);
+    const okQ = !q || normTxt(it.texto + ' ' + it.resumo + ' ' + it.maquina).includes(q);
+    return okCat && okQ;
+  });
+  if (!list.length) {
+    wrap.innerHTML = '<div style="padding:14px;text-align:center;color:#64748B;font-size:12px;">Nenhum registro encontrado no banco deste laudo. Fale um áudio ou execute um comando na aba Comando!</div>';
+    return;
+  }
+  wrap.innerHTML = '';
+  list.forEach(it => {
+    const card = document.createElement('div');
+    card.className = 'db-card';
+    const badges = (it.cats || []).map(c => `<span style="background:#DBEAFE;color:#1E3A8A;padding:2px 6px;border-radius:6px;font-size:10px;font-weight:800;">${escHtml(c)}</span>`).join(' ');
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+        <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">${badges}<strong style="color:#7D1820;font-size:11px;">${escHtml(it.maquina)}</strong></div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:10px;color:#64748B;">${escHtml(it.ts)}</span>
+          <button class="btn btn-danger btn-sm" style="padding:2px 6px;" onclick="deleteFieldDbItem('${it.id}')">X</button>
+        </div>
+      </div>
+      <div style="color:#1F2933;">"${escHtml(it.texto)}"</div>
+      <div style="color:#15803D;font-size:11px;font-weight:700;">→ ${escHtml(it.resumo)}</div>
+    `;
+    wrap.appendChild(card);
+  });
+}
+
+// Auditoria de completude antes de sair da fábrica
+function auditLaudoCompleteness() {
+  const gaps = [];
+  const e = activeReport.empresa || {};
+  if (!e.razaoSocial) gaps.push('Identificação: Razão Social da empresa não preenchida.');
+  if (!e.cnpj) gaps.push('Identificação: CNPJ ausente.');
+  if (!e.cidadeUf) gaps.push('Identificação: Cidade / UF não informada.');
+  activeReport.machines.forEach((m, mi) => {
+    const mName = `${m.tag ? m.tag + ' — ' : ''}${m.nome || 'Máquina ' + (mi + 1)}`;
+    if (!m.potencia && !m.tensao) gaps.push(`${mName}: Potência/Tensão elétrica não registrada.`);
+    (m.risks || []).forEach((r, ri) => {
+      const hrn = (r.lo || 0) * (r.fe || 0) * (r.dph || 0) * (r.np || 0);
+      if (hrn > 50 && !r.fotoDataUrl) gaps.push(`${mName} (Ponto #${ri + 1} - ${r.ponto}): Risco ALTO (HRN ${Math.round(hrn)}) ainda sem foto anexada.`);
+      if (!r.acoes) gaps.push(`${mName} (Ponto #${ri + 1} - ${r.ponto}): Sem medidas corretivas para o Plano 5W2H.`);
+    });
+  });
+  const ncList = (activeReport.checklist || []).filter(c => c.status === 'Não Conforme' && !c.obs);
+  if (ncList.length) gaps.push(`Checklist NR-12: ${ncList.length} item(ns) Não Conforme(s) sem observação de campo detalhada.`);
+  return gaps;
+}
+
+// Geração do Dossiê / Relatório Prévio Completo
+function buildDossierData() {
+  const e = activeReport.empresa || {};
+  const gaps = auditLaudoCompleteness();
+  let altos = 0, medios = 0, baixos = 0;
+  const maqBlocks = activeReport.machines.map((m, mi) => {
+    const rList = (m.risks || []).map((r, ri) => {
+      const hr = calcResidualHrn(r);
+      if (hr.atual > 50) altos++; else if (hr.atual > 5) medios++; else baixos++;
+      return { idx: ri + 1, r, hr };
+    });
+    return { idx: mi + 1, m, rList };
+  });
+  const ncItems = (activeReport.checklist || []).filter(c => c.status === 'Não Conforme' || c.status === 'Atenção');
+  const db = ensureFieldDb();
+  return { e, gaps, altos, medios, baixos, maqBlocks, ncItems, db };
+}
+
+function buildDossierHtml(forPrint) {
+  const d = buildDossierData();
+  const boxStyle = forPrint ? 'margin-bottom:14px;border:1px solid #CBD5E1;padding:10px;border-radius:6px;' : 'margin-bottom:10px;border:1px solid #CBD5E1;padding:8px;border-radius:8px;background:#fff;';
+  let html = '';
+  if (forPrint) {
+    html += `<div style="border-bottom:3px solid #7D1820;padding-bottom:8px;margin-bottom:14px;">
+      <div style="font-size:18px;font-weight:bold;color:#1F4E79;">HARDBASE ENGENHARIA — DOSSIÊ TÉCNICO PRÉVIO NR-12</div>
+      <div style="font-size:12px;color:#475569;">Pré-Relatório de Vistoria em Campo • ${escHtml(d.e.razaoSocial || 'Cliente em levantamento')} ${d.e.cnpj ? '• CNPJ ' + escHtml(d.e.cnpj) : ''} • Data ${todayBr()}</div>
+    </div>`;
+  }
+  html += `<div style="${boxStyle}">
+    <strong style="color:#1F4E79;">1. Resumo Executivo &amp; Redução de Risco (HRN)</strong>
+    <div style="margin-top:4px;">Máquinas: <strong>${d.maqBlocks.length}</strong> • Pontos: <strong>${d.altos + d.medios + d.baixos}</strong> (<span style="color:#991B1B;font-weight:700;">${d.altos} Altos</span>, <span style="color:#92400E;font-weight:700;">${d.medios} Médios</span>, <span style="color:#166534;font-weight:700;">${d.baixos} Baixos</span>) • Banco de Áudios: <strong>${d.db.length} registro(s)</strong></div>
+  </div>`;
+
+  html += `<div style="${boxStyle};border-color:${d.gaps.length ? '#F59E0B' : '#16A34A'};">
+    <strong style="color:${d.gaps.length ? '#92400E' : '#15803D'};">2. Auditoria Pré-Saída (${d.gaps.length ? d.gaps.length + ' pendência(s)' : 'Tudo completo!'})</strong>`;
+  if (d.gaps.length) {
+    html += '<ul style="margin:4px 0 0 16px;padding:0;">' + d.gaps.map(g => `<li>${escHtml(g)}</li>`).join('') + '</ul>';
+  } else {
+    html += '<div style="color:#15803D;margin-top:3px;">Nenhuma pendência crítica detectada antes de gerar o DOCX final.</div>';
+  }
+  html += '</div>';
+
+  html += `<div style="${boxStyle}"><strong style="color:#7D1820;">3. Máquinas, HRN Atual × Residual &amp; Ações 5W2H</strong>`;
+  d.maqBlocks.forEach(mb => {
+    const m = mb.m;
+    html += `<div style="margin-top:6px;padding-top:6px;border-top:1px dashed #CBD5E1;">
+      <strong>${mb.idx}. ${escHtml(m.tag ? m.tag + ' — ' : '')}${escHtml(m.nome)}</strong> ${m.fabricante || m.potencia ? `(${[m.fabricante, m.modelo, m.potencia, m.tensao].filter(Boolean).map(escHtml).join(' • ')})` : ''} • Cat. ${escHtml(m.categoriaNpr || '4')} / PLr ${escHtml(m.plr || 'e')}`;
+    mb.rList.forEach(item => {
+      const r = item.r;
+      html += `<div style="margin:3px 0 0 8px;font-size:11px;">• <strong>${escHtml(r.ponto)}</strong>: HRN Atual <strong>${Math.round(item.hr.atual)}</strong> → Residual Previsto <strong>${item.hr.residual} (${item.hr.nivelResidual})</strong>${r.iso13855 ? ` • <em>${escHtml(r.iso13855)}</em>` : ''}${r.acoes ? `<br/><span style="color:#334155;">Medida: ${escHtml(r.acoes.replace(/\n/g, ' | '))}</span>` : ''}</div>`;
+    });
+    html += '</div>';
+  });
+  html += '</div>';
+
+  if (d.ncItems.length) {
+    html += `<div style="${boxStyle}"><strong style="color:#991B1B;">4. Itens Críticos do Checklist NR-12 (${d.ncItems.length})</strong><ul style="margin:4px 0 0 16px;padding:0;">` +
+      d.ncItems.map(c => `<li><strong>[${escHtml(c.status)}]</strong> ${escHtml(c.norma)}: ${escHtml(c.requisito)}${c.obs ? ' — ' + escHtml(c.obs) : ''}</li>`).join('') +
+      '</ul></div>';
+  }
+
+  if (d.db.length) {
+    html += `<div style="${boxStyle}"><strong style="color:#1F4E79;">5. Linha do Tempo do Banco de Áudios / Notas (${d.db.length})</strong><ul style="margin:4px 0 0 16px;padding:0;">` +
+      d.db.slice().reverse().map(x => `<li><strong>${escHtml(x.ts)}</strong> [${escHtml(x.maquina)} — ${escHtml((x.cats || []).join('/'))}]: "${escHtml(x.texto)}"</li>`).join('') +
+      '</ul></div>';
+  }
+  return html;
+}
+
+function generateAndRenderDossier() {
+  const wrap = document.getElementById('dossier-preview');
+  if (wrap) wrap.innerHTML = buildDossierHtml(false);
+}
+function printDossier() {
+  const area = document.getElementById('print-dossie-area');
+  if (area) area.innerHTML = buildDossierHtml(true);
+  if (window.AndroidBridge && window.AndroidBridge.printPage) {
+    window.AndroidBridge.printPage();
+  } else {
+    window.print();
+  }
+}
+function copyWhatsappSummary() {
+  const d = buildDossierData();
+  const msg = `*HARDBASE ENGENHARIA — PRÉVIA VISTORIA NR-12*\n` +
+    (d.e.razaoSocial ? `*Empresa:* ${d.e.razaoSocial}\n` : '') +
+    `*Data:* ${todayBr()}\n` +
+    `*Resumo:* ${d.maqBlocks.length} máquina(s) avaliada(s) | ${d.altos} ponto(s) Alto(s), ${d.medios} Médio(s), ${d.baixos} Baixo(s).\n` +
+    (d.ncItems.length ? `*Pendências Checklist:* ${d.ncItems.map(c => c.norma + ' (' + c.status + ')').join(', ')}\n` : '') +
+    `*Próximas Etapas:* Consolidação técnica do projeto de segurança NR-12/ISO e cronograma 5W2H. Laudo final completo em elaboração.`;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(msg).then(() => alert('Resumo copiado para colar no WhatsApp do cliente!')).catch(() => prompt('Copie o resumo:', msg));
+  } else {
+    prompt('Copie o resumo:', msg);
+  }
+}
+function applyDossierToSintese() {
+  const d = buildDossierData();
+  activeReport.sinteseGeral = `Foram avaliadas ${d.maqBlocks.length} máquina(s) (${d.altos} risco(s) Alto(s), ${d.medios} Médio(s), ${d.baixos} Baixo(s)) com ${d.ncItems.length} não conformidade(s)/atenções no checklist NR-12 e ${d.db.length} registro(s) técnicos coletados em campo. Com a implantação das proteções NR-12 e dispositivos NBR ISO recomendados, estima-se redução dos pontos críticos para nível Residual Baixo.`;
+  saveState(); renderAll();
+  alert('Síntese técnica atualizada com os números consolidados do Dossiê!');
+}
+
+async function handleAgentPhotoFile(input) {
+  const file = input.files && input.files[0];
+  input.value = '';
+  if (!file) return;
+  const key = (localStorage.getItem(GEMINI_KEY_STORAGE) || '').trim();
+  if (!key) {
+    alert('Para ler automaticamente plaquetas de máquina e analisar riscos por foto no Agente, configure sua chave Gemini API em "IA na Nuvem Opcional".\n\nPara fotografar e inserir no laudo com setas + Timemark offline, use a aba "2. Riscos/ISO".');
+    return;
+  }
+  setAgentStatus('📷 Analisando foto / plaqueta da máquina...');
+  try {
+    const base64 = await new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result).split(',')[1] || '');
+      r.onerror = reject;
+      r.readAsDataURL(file);
+    });
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(key)}`;
+    const body = {
+      contents: [{
+        parts: [
+          { text: 'Analise esta foto de vistoria NR-12 (pode ser uma plaqueta de máquina, motor, painel elétrico ou foto de máquina/risco). Retorne APENAS JSON válido no formato: {"resumo":"","machine":{"nome":"","fabricante":"","modelo":"","serie":"","potencia":"","tensao":"","peso":""},"risks":[{"mode":"add","ponto":"","descricao":"","alvos":[],"consequencias":[],"lo":5,"fe":4,"dph":6,"np":1,"norma":"","acoes":"","prazo":""}]}. Omita campos não legíveis ou ausentes.' },
+          { inline_data: { mime_type: file.type || 'image/jpeg', data: base64 } }
+        ]
+      }],
+      generationConfig: { responseMimeType: 'application/json' }
+    };
+    const resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (!resp.ok) throw new Error('Gemini HTTP ' + resp.status);
+    const data = await resp.json();
+    const rawJson = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const plan = JSON.parse(rawJson.replace(/^```json\s*|\s*```$/g, '').trim());
+    agentLastRawText = '[Foto/Plaqueta] ' + (plan.resumo || 'Leitura automática de imagem NR-12');
+    applyAgentPlan(plan, 'Gemini Visão');
+  } catch (e) {
+    setAgentStatus('❌ Erro na análise da foto: ' + (e.message || e), true);
+  }
 }
 
 async function handleAgentAudioFile(input) {
@@ -1697,6 +2052,7 @@ async function handleAgentAudioFile(input) {
     const transcript = await transcribeAudioWithGemini(base64, mime, key);
     if (!transcript) throw new Error('Áudio vazio ou não compreendido.');
     document.getElementById('agent-prompt').value = transcript;
+    agentLastRawText = transcript;
     await executeAgentWithGemini(transcript, key);
   } catch (e) {
     setAgentStatus('❌ Erro ao processar áudio: ' + (e.message || e), true);
@@ -1706,6 +2062,7 @@ async function handleAgentAudioFile(input) {
 async function executeAgentFromBox() {
   const text = (document.getElementById('agent-prompt')?.value || '').trim();
   if (!text) return alert('Fale um áudio ou escreva uma instrução para o Agente.');
+  agentLastRawText = text;
   const key = (localStorage.getItem(GEMINI_KEY_STORAGE) || '').trim();
   if (key && navigator.onLine) {
     try {
@@ -1746,12 +2103,15 @@ Esquema do JSON:
 {
   "empresa": { "razaoSocial": "", "cnpj": "", "cidadeUf": "", "endereco": "", "art": "", "revisao": "" },
   "newMachine": false,
+  "cloneMachine": { "count": 0, "tags": [], "area": "" },
   "machine": { "nome": "", "tag": "", "fabricante": "", "modelo": "", "area": "", "serie": "", "potencia": "", "tensao": "", "peso": "", "colaboradores": "", "ciclo": [], "s": "S1|S2", "f": "F1|F2", "p": "P1|P2", "plr": "a|b|c|d|e", "categoriaNpr": "B|1|2|3|4" },
-  "risks": [ { "mode": "add|update", "ponto": "", "descricao": "", "alvos": [], "consequencias": [], "lo": 5, "fe": 4, "dph": 6, "np": 1, "norma": "", "acoes": "", "prazo": "" } ],
+  "risks": [ { "mode": "add|update", "ponto": "", "descricao": "", "alvos": [], "consequencias": [], "lo": 5, "fe": 4, "dph": 6, "np": 1, "norma": "", "acoes": "", "prazo": "", "iso13855": "" } ],
   "checklistUpdates": [ { "match": "", "status": "Conforme|Não Conforme|Atenção|N/A", "obs": "" } ],
   "checklistAdd": [ { "norma": "", "requisito": "", "status": "Conforme|Não Conforme|Atenção|N/A", "obs": "" } ],
   "sinteseGeral": "",
   "generateSintese": false,
+  "showDossier": false,
+  "auditOnly": false,
   "exportDocx": false
 }
 Instrução do engenheiro: """${text}"""`;
@@ -1799,8 +2159,8 @@ function runOfflineMultiTaskAgent(text) {
   if (fabMatch) plan.machine.fabricante = cleanExtractedVal(fabMatch[1]);
   const modMatch = text.match(/\bmodelo\s*(?:[eé:]\s*)?([^.,;\n]+?)(?=,|\.|;|\btag\b|\bfabricante\b|\b[aá]rea\b|\bponto\b|$)/i);
   if (modMatch) plan.machine.modelo = cleanExtractedVal(modMatch[1]);
-  const areaMatch = text.match(/\b(?:[aá]rea|setor)\s*(?:[eé:]\s*)?([^.,;\n]+?)(?=,|\.|;|\bmotor\b|\bpot[eê]ncia\b|\bponto\b|$)/i);
-  if (areaMatch) plan.machine.area = cleanExtractedVal(areaMatch[1]);
+  const areaMatch = text.match(/(?:^|[.,;]\s*|\bna\s+|\bno\s+)(?:[aá]rea|setor)\s*(?:[eé:]\s*)?(?!de\s+engenharia)([^.,;\n]+?)(?=,|\.|;|\bmotor\b|\bpot[eê]ncia\b|\bponto\b|$)/i);
+  if (areaMatch && !/\bpelo\s+setor\b/i.test(text)) plan.machine.area = cleanExtractedVal(areaMatch[1]);
   const serMatch = text.match(/\b(?:n[uú]mero\s+de\s+s[eé]rie|s[eé]rie)\s*(?:[eé:]\s*)?([A-Z0-9._\/-]{2,30})/i);
   if (serMatch) plan.machine.serie = cleanExtractedVal(serMatch[1]);
   const potMatch = text.match(/\b(\d+(?:[.,]\d+)?\s*(?:cv|kw|hp|watts?))\b/i);
@@ -1912,12 +2272,56 @@ function runOfflineMultiTaskAgent(text) {
     }
   });
 
-  // 6. SÍNTESE & EXPORTAR
+  // 6. CÁLCULOS ISO 13855 & ISO 13857 POR VOZ
+  const isoNotes = [];
+  if (/\b(13855|cortina de luz|bimanual)\b/.test(n) && /\b(tempo|parada|velocidade|resolucao)\b/.test(n)) {
+    const tM = n.match(/tempo(?:\s+de\s+parada)?\s*(?:de)?\s*(\d+(?:[.,]\d+)?)/);
+    const rM = n.match(/resolucao\s*(?:de)?\s*(\d+(?:[.,]\d+)?)/);
+    const kVal = /bimanual/.test(n) && !/cortina/.test(n) ? 1600 : (/cortina/.test(n) ? 1600 : 2000);
+    const tVal = tM ? parseFloat(tM[1].replace(',','.')) : 0.25;
+    const dRes = rM ? parseFloat(rM[1].replace(',','.')) : 30;
+    const cVal = Math.max(0, Math.round(8 * (dRes - 14)));
+    const sDist = Math.round(kVal * tVal + cVal);
+    const isoStr = `S = (${kVal} × ${tVal}s) + ${cVal} mm = ${sDist} mm (ABNT NBR ISO 13855)`;
+    plan.isoCalcText = isoStr;
+    if (plan.risks.length) {
+      plan.risks[plan.risks.length - 1].iso13855 = isoStr;
+      plan.risks[plan.risks.length - 1].acoes = (plan.risks[plan.risks.length - 1].acoes ? plan.risks[plan.risks.length - 1].acoes + '\n' : '') + `Posicionar proteção optoeletrônica / bimanual a distância mínima ${sDist} mm (NBR ISO 13855).`;
+    }
+    isoNotes.push(isoStr);
+  }
+  if (/\b(13857|abertura|malha|grade)\b/.test(n) && /\d+\s*mm\b/.test(n)) {
+    const abM = n.match(/(?:abertura|malha|grade|fresta)\s*(?:de)?\s*(\d+(?:[.,]\d+)?)\s*mm/);
+    if (abM) {
+      const eMm = parseFloat(abM[1].replace(',','.'));
+      const dSeg = eMm <= 4 ? 2 : (eMm <= 6 ? 10 : (eMm <= 8 ? 20 : (eMm <= 12 ? 100 : (eMm <= 20 ? 120 : (eMm <= 30 ? 200 : 850)))));
+      const iso57Str = `Abertura e = ${eMm} mm → Distância mínima segura ≥ ${dSeg} mm (ABNT NBR ISO 13857 Tabela 4)`;
+      plan.iso13857Text = iso57Str;
+      isoNotes.push(iso57Str);
+    }
+  }
+
+  // 7. CLONAGEM EM LOTE DE MÁQUINAS
+  if (/\b(clonar|duplicar|replicar)\b/.test(n) && /\bmaquina\b/.test(n)) {
+    const cntM = n.match(/(\d+)\s*(?:vez(?:es)?|copias?)/);
+    const tagsM = Array.from(text.matchAll(/\b([A-Z]{1,4}#?\-?\d{1,4})\b/g)).map(x => x[1]).filter(x => !/^NR\-?12$/i.test(x) && !/^S[12]$/i.test(x));
+    const cloneAreaM = text.match(/\b(?:no\s+setor|na\s+[aá]rea|setor)\s+([^.,;\n]+)/i);
+    plan.cloneMachine = {
+      count: cntM ? Math.min(20, parseInt(cntM[1], 10)) : (tagsM.length || 1),
+      tags: tagsM,
+      area: cloneAreaM ? cleanExtractedVal(cloneAreaM[1]) : ''
+    };
+  }
+
+  // 8. SÍNTESE, AUDITORIA, DOSSIÊ & EXPORTAR
+  if (/\b(o que falta|auditar|auditoria|pendencias)\b/.test(n)) plan.auditOnly = true;
+  if (/\b(dossie|relatorio previo|pre laudo|resumo para o cliente|resumo cliente)\b/.test(n)) plan.showDossier = true;
   if (/\b(gerar sintese|resumir laudo|resumo executivo)\b/.test(n)) plan.generateSintese = true;
   const sinM = text.match(/\b(?:s[ií]ntese|conclus[aã]o\s+geral)\s*(?:[eé:]\s*)?(.+)/i);
   if (sinM && !plan.generateSintese) plan.sinteseGeral = cleanExtractedVal(sinM[1]);
   if (/\b(gerar docx|exportar docx|gerar laudo|salvar word)\b/.test(n)) plan.exportDocx = true;
 
+  agentLastRawText = text;
   applyAgentPlan(plan, 'Agente Local Offline');
 }
 
@@ -1925,6 +2329,7 @@ function applyAgentPlan(plan, engineLabel) {
   agentUndoSnapshot = JSON.stringify(activeReport);
   document.getElementById('btn-agent-undo').style.display = 'inline-flex';
   const logs = [];
+  const dbCats = [];
 
   // 1. Empresa
   if (plan.empresa) {
@@ -1933,11 +2338,28 @@ function applyAgentPlan(plan, engineLabel) {
     ['razaoSocial','cnpj','cidadeUf','endereco','art','revisao'].forEach(k => {
       if (plan.empresa[k]) { e[k] = plan.empresa[k]; changed.push(k); }
     });
-    if (changed.length) logs.push({ title: '1. Empresa Atualizada', detail: changed.map(k => `${k}: ${e[k]}`).join(' • ') });
+    if (changed.length) {
+      dbCats.push('Empresa');
+      logs.push({ title: '1. Empresa Atualizada', detail: changed.map(k => `${k}: ${e[k]}`).join(' • ') });
+    }
   }
 
-  // 2. Nova máquina ou atualizar atual
-  if (plan.newMachine) {
+  // 2. Clonar ou criar nova máquina
+  if (plan.cloneMachine && (plan.cloneMachine.count > 0 || (plan.cloneMachine.tags || []).length > 0)) {
+    const base = curMaq();
+    const total = Math.max(plan.cloneMachine.count || 0, (plan.cloneMachine.tags || []).length);
+    const createdTags = [];
+    for (let c = 0; c < total; c++) {
+      const copy = JSON.parse(JSON.stringify(base));
+      copy.tag = (plan.cloneMachine.tags && plan.cloneMachine.tags[c]) ? plan.cloneMachine.tags[c] : ((base.tag || 'MAQ') + '-' + (c + 2));
+      if (plan.cloneMachine.area) copy.area = plan.cloneMachine.area;
+      copy.risks = (copy.risks || []).map(rk => ({ ...rk, fotoDataUrl: '' }));
+      activeReport.machines.push(copy);
+      createdTags.push(copy.tag);
+    }
+    dbCats.push('Máquina');
+    logs.push({ title: `2. ${total} Máquina(s) Clonada(s)`, detail: `Tags criadas: ${createdTags.join(', ')}${plan.cloneMachine.area ? ' • Setor: ' + plan.cloneMachine.area : ''}` });
+  } else if (plan.newMachine) {
     const idx = activeReport.machines.length + 1;
     activeReport.machines.push({
       nome: plan.machine?.nome || ('Máquina ' + idx), tag: '', fabricante: '', modelo: '', area: '', serie: '',
@@ -1947,6 +2369,7 @@ function applyAgentPlan(plan, engineLabel) {
     });
     activeMaqIdx = activeReport.machines.length - 1;
     activeRiskIdx = 0;
+    dbCats.push('Máquina');
     logs.push({ title: '2. Nova Máquina Criada', detail: `${activeReport.machines[activeMaqIdx].nome}` });
   }
 
@@ -1966,10 +2389,13 @@ function applyAgentPlan(plan, engineLabel) {
       m.plr = plan.machine.plr || res.plr;
       m.categoriaNpr = plan.machine.categoriaNpr || res.cat;
     }
-    if (mc.length) logs.push({ title: '2/3. Dados da Máquina & PLr', detail: mc.join(' • ') });
+    if (mc.length) {
+      dbCats.push('Máquina');
+      logs.push({ title: '2/3. Dados da Máquina & PLr', detail: mc.join(' • ') });
+    }
   }
 
-  // 4. Pontos de risco
+  // 4. Pontos de risco (com reescrita técnica + HRN residual)
   if (Array.isArray(plan.risks) && plan.risks.length) {
     const m = curMaq();
     plan.risks.forEach((rp, idx) => {
@@ -1985,7 +2411,7 @@ function applyAgentPlan(plan, engineLabel) {
         activeRiskIdx = m.risks.length - 1;
       }
       if (rp.ponto) target.ponto = rp.ponto;
-      if (rp.descricao) target.descricao = rp.descricao;
+      if (rp.descricao) target.descricao = polishTechnicalText(rp.descricao, false);
       if (Array.isArray(rp.alvos) && rp.alvos.length) target.alvos = Array.from(new Set([...(target.alvos||[]), ...rp.alvos.filter(x => ALVO_OPTS.includes(x))]));
       if (Array.isArray(rp.consequencias) && rp.consequencias.length) target.consequencias = Array.from(new Set([...(target.consequencias||[]), ...rp.consequencias.filter(x => CONSEQ_OPTS.includes(x))]));
       if (rp.lo) target.lo = rp.lo;
@@ -1993,11 +2419,29 @@ function applyAgentPlan(plan, engineLabel) {
       if (rp.dph) target.dph = rp.dph;
       if (rp.np) target.np = rp.np;
       if (rp.norma) target.norma = rp.norma;
-      if (rp.acoes) target.acoes = target.acoes ? (target.acoes + '\n' + rp.acoes) : rp.acoes;
+      if (rp.iso13855) target.iso13855 = rp.iso13855;
+      if (rp.acoes) {
+        const polAct = polishTechnicalText(rp.acoes, true);
+        target.acoes = target.acoes ? (target.acoes + '\n' + polAct) : polAct;
+      }
       if (rp.prazo) target.prazo = rp.prazo;
-      const hrn = +((target.lo||0)*(target.fe||0)*(target.dph||0)*(target.np||0)).toFixed(1);
-      logs.push({ title: `4. Ponto de Risco (${rp.mode === 'update' ? 'Atualizado' : 'Adicionado'})`, detail: `${target.ponto || 'Sem título'} • HRN ${hrn}${target.prazo ? ' • Prazo: ' + target.prazo : ''}` });
+      const hr = calcResidualHrn(target);
+      dbCats.push('Risco/HRN');
+      logs.push({ title: `4. Ponto de Risco (${rp.mode === 'update' ? 'Atualizado' : 'Adicionado'})`, detail: `${target.ponto || 'Sem título'} • HRN Atual ${Math.round(hr.atual)} → Residual Est. ${hr.residual} (${hr.nivelResidual})${target.prazo ? ' • Prazo: ' + target.prazo : ''}` });
     });
+  }
+
+  if (plan.isoCalcText || plan.iso13857Text) {
+    dbCats.push('ISO/Cálculo');
+    const txtIso = [plan.isoCalcText, plan.iso13857Text].filter(Boolean).join(' | ');
+    if (plan.iso13857Text && curRisk()) {
+      curRisk().acoes = curRisk().acoes ? (curRisk().acoes + '\n' + plan.iso13857Text) : plan.iso13857Text;
+    }
+    if (plan.isoCalcText && !plan.risks?.length && curRisk()) {
+      curRisk().iso13855 = plan.isoCalcText;
+      curRisk().acoes = curRisk().acoes ? (curRisk().acoes + '\n' + plan.isoCalcText) : plan.isoCalcText;
+    }
+    logs.push({ title: '4b. Cálculo Normativo NBR ISO', detail: txtIso });
   }
 
   // 5. Checklist NR-12
@@ -2008,6 +2452,7 @@ function applyAgentPlan(plan, engineLabel) {
       if (item && u.status) {
         item.status = u.status;
         if (u.obs) item.obs = u.obs;
+        dbCats.push('Checklist');
         logs.push({ title: '5. Checklist NR-12 Atualizado', detail: `${item.norma} → ${u.status}` });
       }
     });
@@ -2016,34 +2461,48 @@ function applyAgentPlan(plan, engineLabel) {
     plan.checklistAdd.forEach(a => {
       if (!a.requisito) return;
       activeReport.checklist.push({ norma: a.norma || 'NR-12', requisito: a.requisito, status: a.status || 'Não Conforme', obs: a.obs || '' });
+      dbCats.push('Checklist');
       logs.push({ title: '5. Novo Item no Checklist', detail: `${a.requisito} (${a.status || 'Não Conforme'})` });
     });
   }
 
-  // 6. Síntese & Exportação
+  // 6. Síntese & Auditoria
   if (plan.generateSintese) {
-    let alt = 0, med = 0, bxi = 0, nc = 0;
-    activeReport.machines.forEach(m => (m.risks || []).forEach(r => {
-      const h = (r.lo||0)*(r.fe||0)*(r.dph||0)*(r.np||0);
-      if (h > 50) alt++; else if (h > 5) med++; else bxi++;
-    }));
-    (activeReport.checklist || []).forEach(c => { if (c.status === 'Não Conforme') nc++; });
-    activeReport.sinteseGeral = `Foram avaliadas ${activeReport.machines.length} máquina(s), totalizando ${alt + med + bxi} ponto(s) de risco (${alt} de prioridade alta, ${med} média e ${bxi} baixa) e ${nc} item(ns) não conforme(s) no checklist NR-12. As adequações de prioridade alta devem ser priorizadas antes da liberação operacional contínua.`;
+    applyDossierToSintese();
     logs.push({ title: '6. Síntese Executiva Gerada', detail: activeReport.sinteseGeral });
   } else if (plan.sinteseGeral) {
     activeReport.sinteseGeral = plan.sinteseGeral;
     logs.push({ title: '6. Síntese Atualizada', detail: plan.sinteseGeral });
   }
 
-  if (!logs.length) {
-    logs.push({ ok: false, title: 'Nenhuma tarefa automática reconhecida neste texto', detail: 'Tente incluir palavras-chave como: Empresa..., CNPJ..., Máquina..., Ponto de risco..., Risco de esmagamento..., Parada de emergência não conforme..., ou configure sua chave Gemini.' });
+  if (plan.auditOnly) {
+    const gaps = auditLaudoCompleteness();
+    logs.push({ title: `🔍 Auditoria Pré-Saída (${gaps.length} pendência(s))`, detail: gaps.length ? gaps.join(' • ') : 'Laudo 100% consistente!' });
+  }
+
+  // Salva SEMPRE no Banco de Dados Organizado de Campo (mesmo nota livre!)
+  if (agentLastRawText) {
+    const isCommandOnly = (plan.auditOnly || plan.showDossier || plan.generateSintese) && logs.length <= 2 && dbCats.length === 0;
+    if (!isCommandOnly) {
+      if (!logs.length) {
+        dbCats.push('Nota Campo');
+        logs.push({ title: '🗄️ Nota Salva no Banco de Dados de Campo', detail: `"${agentLastRawText}" — Catalogado para consulta e dossiê prévio.` });
+      }
+      saveFieldDbEntry(agentLastRawText, dbCats, logs.map(l => l.title).join(' + '), curMaq().tag || curMaq().nome);
+    }
+    agentLastRawText = '';
   }
 
   saveState();
   renderAll();
-  setAgentStatus(`✅ ${logs.filter(l => l.ok !== false).length} tarefa(s) executada(s) via ${engineLabel}.`);
+  updateDbBadge();
+  setAgentStatus(`✅ ${logs.length} ação(ões) registrada(s) via ${engineLabel}.`);
   renderAgentLogs(logs);
 
+  if (plan.showDossier) {
+    switchAgentTab(2);
+    generateAndRenderDossier();
+  }
   if (plan.exportDocx) {
     closeAgentModal();
     switchTab(3);
