@@ -572,12 +572,92 @@
 
   <!-- RODAPÉ FIXO -->
   <div class="footer-bar">
-    <span style="font-size:11px;font-weight:700;color:#64748B;" id="save-badge">Salvo offline</span>
-    <button class="btn btn-primary" style="padding:10px 18px;font-size:13px;" onclick="nextTab()">
-      Salvar &amp; Avançar →
-    </button>
+    <span style="font-size:11px;font-weight:700;color:#64748B;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="save-badge">Salvo offline</span>
+    <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
+      <button class="btn btn-amber" style="padding:10px 12px;font-size:12px;" onclick="openAgentModal()">
+        🎙️ Agente IA
+      </button>
+      <button class="btn btn-primary" style="padding:10px 14px;font-size:13px;" onclick="nextTab()">
+        Avançar →
+      </button>
+    </div>
   </div>
 
+</div>
+
+<!-- MODAL AGENTE MULTITAREFA NR-12 (ÁUDIO -> TEXTO + PREENCHIMENTO) -->
+<div class="modal-backdrop" id="modal-agent">
+  <div class="modal-box" style="max-width:460px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <strong style="font-size:15px;color:#1F4E79;">🤖 Agente Multitarefa NR-12</strong>
+        <div style="font-size:11px;color:#64748B;">Fale um áudio: vira texto e o agente preenche o laudo em várias etapas</div>
+      </div>
+      <button class="btn btn-soft btn-sm" onclick="closeAgentModal()">Fechar</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <button class="btn btn-primary" style="padding:11px;" onclick="startAgentVoice(false)">
+        🎙️ Falar Áudio
+      </button>
+      <button class="btn btn-navy" style="padding:11px;" onclick="startAgentVoice(true)">
+        ➕ Continuar Fala
+      </button>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#334155;cursor:pointer;">
+        <input type="checkbox" id="agent-autorun" checked style="width:16px;height:16px;" />
+        Executar tarefas automático ao parar de falar
+      </label>
+      <label class="btn btn-soft btn-sm" style="cursor:pointer;">
+        📁 Áudio (.ogg/.mp3)
+        <input type="file" accept="audio/*" style="display:none;" onchange="handleAgentAudioFile(this)" />
+      </label>
+    </div>
+
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+        <label class="lbl" style="margin:0;">Texto Transcrito para o Agente Ler</label>
+        <button class="btn btn-soft btn-sm" onclick="document.getElementById('agent-prompt').value=''">Limpar</button>
+      </div>
+      <textarea id="agent-prompt" rows="4" placeholder="Ex.: Empresa Metalúrgica Sul Ltda, CNPJ 12.345.678/0001-90, Curitiba PR. Nova máquina Prensa PH-40, fabricante Harlo, tag PR-02, 15 CV, 380V. Ponto de risco zona de prensagem sem proteção, risco de esmagamento e corte nos membros superiores, HRN alto, instalar cortina de luz em até 30 dias. Parada de emergência não conforme."></textarea>
+    </div>
+
+    <div class="h-scroll" style="padding-bottom:2px;">
+      <span class="chip" onclick="fillAgentExample('emp')">+ Ex. Empresa/Máq</span>
+      <span class="chip" onclick="fillAgentExample('risk')">+ Ex. 2 Pontos HRN</span>
+      <span class="chip" onclick="fillAgentExample('chk')">+ Ex. Checklist</span>
+      <span class="chip" onclick="fillAgentExample('sintese')">⚡ Gerar Síntese</span>
+    </div>
+
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-green" style="flex:1;padding:11px;font-size:13px;" onclick="executeAgentFromBox()">
+        ⚡ Ler Texto &amp; Preencher Tudo
+      </button>
+      <button class="btn btn-danger" id="btn-agent-undo" style="display:none;padding:11px;" onclick="undoAgentAction()">
+        ↩️ Desfazer
+      </button>
+    </div>
+
+    <div id="agent-status" style="font-size:12px;color:#1F4E79;font-weight:700;display:none;"></div>
+    <div id="agent-log" style="display:flex;flex-direction:column;gap:6px;max-height:190px;overflow-y:auto;"></div>
+
+    <details style="border-top:1px solid #E2E8F0;padding-top:8px;">
+      <summary style="font-size:11px;font-weight:700;color:#475569;cursor:pointer;">
+        ⚙️ IA na Nuvem Opcional (Gemini API — Offline funciona sem chave)
+      </summary>
+      <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;">
+        <div style="font-size:11px;color:#64748B;line-height:1.35;">
+          Sem chave, o Agente Multitarefa já funciona 100% offline com a voz nativa do celular. Se quiser entender áudios longos livres ou arquivos de áudio do WhatsApp (.ogg/.mp3), cole sua chave Gemini API:
+        </div>
+        <div style="display:flex;gap:6px;">
+          <input type="password" id="agent-gemini-key" placeholder="AIza... (salvo só neste celular)" style="font-size:12px;" onchange="saveGeminiKey()" />
+          <button class="btn btn-soft btn-sm" onclick="saveGeminiKey()">Salvar</button>
+        </div>
+      </div>
+    </details>
+  </div>
 </div>
 
 <!-- MODAL GERENCIADOR DE LAUDOS & OTA -->
@@ -606,12 +686,15 @@ const ACTIVE_KEY = 'hb_nr12_active_id_v1';
 
 const CICLO_OPTS = ['Operação', 'Setup / Troca', 'Manutenção', 'Limpeza', 'Afiação / Ajuste'];
 const ALVO_OPTS = ['Membros Superiores', 'Membros Inferiores', 'Olhos', 'Corpo Inteiro', 'Outros'];
-const CONSEQ_OPTS = ['Corte', 'Fratura', 'Esmagamento', 'Aprisionamento', 'Projeção', 'Óbito', 'Queda', 'Térmico', 'Químico', 'Biológico'];
+const CONSEQ_OPTS = ['Corte', 'Fratura', 'Esmagamento', 'Amputação', 'Aprisionamento', 'Projeção', 'Óbito', 'Queda', 'Térmico', 'Químico', 'Biológico'];
 
 let currentTab = 0;
 let activeMaqIdx = 0;
 let activeRiskIdx = 0;
 let activeVoiceTarget = null;
+let agentVoiceAppend = false;
+let agentUndoSnapshot = null;
+const GEMINI_KEY_STORAGE = 'hb_nr12_gemini_key_v1';
 let reports = [];
 let activeReport = null;
 
@@ -993,7 +1076,7 @@ function renderRiskTab() {
   document.getElementById('r-np').value = String(r.np ?? 2);
   document.getElementById('r-norma').value = r.norma || '';
   document.getElementById('r-acoes').value = r.acoes || '';
-  document.getElementById('r-prazo').value = r.prazo || 'Até 60 dias';
+  document.getElementById('r-prazo').value = r.prazo || '';
   updateHrnBadge();
 
   renderCheckPills('alvos-grid', ALVO_OPTS, r.alvos || [], (list) => { r.alvos = list; saveState(); });
@@ -1141,6 +1224,14 @@ window.__onNativeVoiceResult = function(spoken) {
   if (!spoken || !activeVoiceTarget) return;
   const el = document.getElementById(activeVoiceTarget);
   if (!el) return;
+  if (activeVoiceTarget === 'agent-prompt') {
+    el.value = (agentVoiceAppend && el.value.trim()) ? (el.value.trim() + '. ' + spoken) : spoken;
+    el.dispatchEvent(new Event('input'));
+    if (document.getElementById('agent-autorun')?.checked) {
+      executeAgentFromBox();
+    }
+    return;
+  }
   el.value = el.value ? (el.value.trim() + ' ' + spoken) : spoken;
   el.dispatchEvent(new Event('input'));
 };
@@ -1450,8 +1541,8 @@ function openLaudosModal() {
     `;
     list.appendChild(row);
   });
-  const ver = window.AndroidBridge ? window.AndroidBridge.getAppVersionCode() : 1;
-  document.getElementById('app-ver-label').textContent = 'Versão local: v' + ver;
+  const ver = window.AndroidBridge ? window.AndroidBridge.getAppVersionCode() : 2;
+  document.getElementById('app-ver-label').textContent = 'Versão local: v1.2.0 (build ' + ver + ')';
   document.getElementById('modal-laudos').classList.add('open');
 }
 function closeLaudosModal() { document.getElementById('modal-laudos').classList.remove('open'); }
@@ -1468,13 +1559,15 @@ function deleteReport(id) {
 }
 function createBlankReport() {
   const r = createSampleData();
-  r.empresa = { razaoSocial: '', cnpj: '', endereco: '', cidadeUf: 'Curitiba - PR', revisao: '0', data: todayBr(), art: '' };
+  r.empresa = { razaoSocial: '', cnpj: '', endereco: '', cidadeUf: '', revisao: '0', data: todayBr(), art: '' };
+  r.sinteseGeral = '';
+  r.checklist = (r.checklist || []).map(c => ({ ...c, status: 'N/A', obs: '' }));
   r.machines = [{
-    nome: 'Máquina 01', tag: 'MAQ#001', fabricante: '', modelo: '', area: '', serie: '',
+    nome: 'Máquina 01', tag: '', fabricante: '', modelo: '', area: '', serie: '',
     comprimento: '', largura: '', altura: '', ferramenta: '', peso: '', mesa: '', corte: '',
-    colaboradores: '1', limitesArea: '', potencia: '', tensao: '', ciclo: ['Operação'],
+    colaboradores: '', limitesArea: '', potencia: '', tensao: '', ciclo: [],
     s: 'S2', f: 'F2', p: 'P2', plr: 'e', categoriaNpr: '4',
-    risks: [{ ponto: 'Ponto de Risco #1', descricao: '', alvos: ['Membros Superiores'], consequencias: ['Corte'], lo: 5, fe: 4, dph: 6, np: 1, norma: 'NR-12', acoes: '', prazo: 'Até 60 dias', iso13855: '', vozNota: '', fotoDataUrl: '' }]
+    risks: [{ ponto: 'Ponto de Risco #1', descricao: '', alvos: [], consequencias: [], lo: 5, fe: 4, dph: 6, np: 1, norma: '', acoes: '', prazo: '', iso13855: '', vozNota: '', fotoDataUrl: '' }]
   }];
   reports.unshift(r);
   activeReport = r; activeMaqIdx = 0; activeRiskIdx = 0;
@@ -1496,11 +1589,471 @@ window.__onUpdateStatus = function(status, version, notes) {
   if (status === 'updated') {
     alert(`Atualização v${version} instalada! ${notes || ''} O app será recarregado.`);
     window.AndroidBridge && window.AndroidBridge.reloadApp();
+  } else if (status === 'apk_required') {
+    if (confirm(`Nova versão nativa v${version} disponível no Google Drive! Deseja abrir o link para baixar e instalar o APK atualizado?`)) {
+      window.AndroidBridge && window.AndroidBridge.openExternalUrl(notes);
+    }
   } else {
     alert(notes || 'Sem atualizações pendentes.');
   }
 };
+// ============ AGENTE MULTITAREFA NR-12 (VOZ -> TEXTO -> TAREFAS) ============
+function openAgentModal() {
+  const k = localStorage.getItem(GEMINI_KEY_STORAGE) || '';
+  const keyEl = document.getElementById('agent-gemini-key');
+  if (keyEl) keyEl.value = k;
+  document.getElementById('btn-agent-undo').style.display = agentUndoSnapshot ? 'inline-flex' : 'none';
+  document.getElementById('modal-agent').classList.add('open');
+}
+function closeAgentModal() {
+  document.getElementById('modal-agent').classList.remove('open');
+}
+function saveGeminiKey() {
+  const k = (document.getElementById('agent-gemini-key')?.value || '').trim();
+  if (k) localStorage.setItem(GEMINI_KEY_STORAGE, k);
+  else localStorage.removeItem(GEMINI_KEY_STORAGE);
+  setAgentStatus(k ? '🔑 Chave Gemini salva localmente.' : '🔑 Chave removida (modo 100% offline ativo).');
+}
+function setAgentStatus(msg, isErr) {
+  const st = document.getElementById('agent-status');
+  if (!st) return;
+  st.style.display = msg ? 'block' : 'none';
+  st.style.color = isErr ? '#991B1B' : '#1F4E79';
+  st.textContent = msg || '';
+}
+function renderAgentLogs(logs) {
+  const wrap = document.getElementById('agent-log');
+  wrap.innerHTML = '';
+  logs.forEach(item => {
+    const div = document.createElement('div');
+    div.style.cssText = 'padding:8px 10px;border-radius:8px;border:1px solid #CBD5E1;background:#F8FAFC;font-size:12px;line-height:1.35;';
+    div.innerHTML = `<strong style="color:${item.ok === false ? '#991B1B' : '#15803D'};">${escHtml(item.title)}</strong><div style="color:#334155;margin-top:2px;">${escHtml(item.detail)}</div>`;
+    wrap.appendChild(div);
+  });
+}
+function startAgentVoice(appendMode) {
+  agentVoiceAppend = !!appendMode;
+  activeVoiceTarget = 'agent-prompt';
+  if (window.AndroidBridge && window.AndroidBridge.startVoiceNote) {
+    window.AndroidBridge.startVoiceNote('Fale os dados da empresa, máquina, riscos NR-12 ou checklist...');
+  } else {
+    alert('Use no celular Android ou digite/cole o texto no campo acima.');
+  }
+}
+function fillAgentExample(kind) {
+  const box = document.getElementById('agent-prompt');
+  if (kind === 'emp') {
+    box.value = 'Empresa Metalúrgica Sul Brasil Ltda, CNPJ 12.345.678/0001-90, cidade Curitiba - PR. Máquina Prensa Excêntrica PH-40, fabricante Harlo, tag PR#02, área Estamparia, motor 15 CV, 380V, 2 operadores, categoria 4 PLr e.';
+  } else if (kind === 'risk') {
+    box.value = 'Novo ponto de risco Zona de Prensagem, risco de esmagamento e amputação nos membros superiores, HRN alto LO 8 FE 4 DPH 10 NP 1, instalar cortina de luz e comando bimanual conforme ISO 13855 em até 30 dias. Outro ponto Polias e Correias sem proteção, aprisionamento nas mãos, risco médio, colocar proteção fixa enclausurada em até 60 dias.';
+  } else if (kind === 'chk') {
+    box.value = 'Marcar parada de emergência como não conforme, elétrica e aterramento não conforme, capacitação conforme, adicionar checklist: Manual de operação indisponível no setor.';
+  } else if (kind === 'sintese') {
+    box.value = 'Gerar síntese automática do laudo.';
+  }
+}
+function undoAgentAction() {
+  if (!agentUndoSnapshot) return;
+  const idx = reports.findIndex(r => r.id === activeReport.id);
+  const restored = JSON.parse(agentUndoSnapshot);
+  if (idx >= 0) reports[idx] = restored;
+  activeReport = restored;
+  agentUndoSnapshot = null;
+  document.getElementById('btn-agent-undo').style.display = 'none';
+  saveState(); renderAll();
+  setAgentStatus('↩️ Alterações do Agente desfeitas com sucesso.');
+  document.getElementById('agent-log').innerHTML = '';
+}
+function normTxt(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+function cleanExtractedVal(s) {
+  return String(s || '').replace(/^[:\-–\s]+/, '').replace(/[.;,\s]+$/, '').trim();
+}
+function snapWeight(num, allowed) {
+  let best = allowed[0], diff = Infinity;
+  allowed.forEach(a => { const d = Math.abs(a - num); if (d < diff) { diff = d; best = a; } });
+  return best;
+}
+
+async function handleAgentAudioFile(input) {
+  const file = input.files && input.files[0];
+  input.value = '';
+  if (!file) return;
+  const key = (localStorage.getItem(GEMINI_KEY_STORAGE) || '').trim();
+  if (!key) {
+    alert('Para ler arquivos de áudio (.ogg/.mp3/.m4a) enviados, informe uma chave Gemini API em "IA na Nuvem Opcional".\n\nPara gravar sua voz sem internet ou sem chave, use o botão azul "🎙️ Falar Áudio".');
+    return;
+  }
+  setAgentStatus('🎧 Lendo arquivo de áudio e transcrevendo para o Agente...');
+  try {
+    const base64 = await new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result).split(',')[1] || '');
+      r.onerror = reject;
+      r.readAsDataURL(file);
+    });
+    const mime = file.type || 'audio/ogg';
+    const transcript = await transcribeAudioWithGemini(base64, mime, key);
+    if (!transcript) throw new Error('Áudio vazio ou não compreendido.');
+    document.getElementById('agent-prompt').value = transcript;
+    await executeAgentWithGemini(transcript, key);
+  } catch (e) {
+    setAgentStatus('❌ Erro ao processar áudio: ' + (e.message || e), true);
+  }
+}
+
+async function executeAgentFromBox() {
+  const text = (document.getElementById('agent-prompt')?.value || '').trim();
+  if (!text) return alert('Fale um áudio ou escreva uma instrução para o Agente.');
+  const key = (localStorage.getItem(GEMINI_KEY_STORAGE) || '').trim();
+  if (key && navigator.onLine) {
+    try {
+      setAgentStatus('🤖 Agente IA analisando múltiplas tarefas...');
+      await executeAgentWithGemini(text, key);
+      return;
+    } catch (e) {
+      setAgentStatus('⚠️ Nuvem indisponível (' + (e.message || 'offline') + '). Executando Motor Multitarefa Offline...');
+    }
+  }
+  runOfflineMultiTaskAgent(text);
+}
+
+async function transcribeAudioWithGemini(base64Audio, mimeType, apiKey) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const body = {
+    contents: [{
+      parts: [
+        { text: 'Transcreva fielmente em Português (Brasil) este áudio de inspeção técnica de engenharia NR-12, mantendo siglas como CNPJ, CV, V, TAG, S1/S2, F1/F2, P1/P2, PLr, HRN, LO, FE, DPH, NP e normas ISO.' },
+        { inline_data: { mime_type: mimeType, data: base64Audio } }
+      ]
+    }]
+  };
+  const resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  if (!resp.ok) throw new Error('HTTP ' + resp.status);
+  const data = await resp.json();
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+}
+
+async function executeAgentWithGemini(text, apiKey) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const prompt = `Você é o Agente Multitarefa de Engenharia NR-12 do app HardBase NR-12 Pro.
+Leia a instrução do engenheiro e retorne APENAS um JSON válido (sem markdown) com as tarefas detectadas. Omita campos não mencionados.
+Opções válidas de alvos: ${JSON.stringify(ALVO_OPTS)}
+Opções válidas de consequencias: ${JSON.stringify(CONSEQ_OPTS)}
+Opções válidas de ciclo: ${JSON.stringify(CICLO_OPTS)}
+Esquema do JSON:
+{
+  "empresa": { "razaoSocial": "", "cnpj": "", "cidadeUf": "", "endereco": "", "art": "", "revisao": "" },
+  "newMachine": false,
+  "machine": { "nome": "", "tag": "", "fabricante": "", "modelo": "", "area": "", "serie": "", "potencia": "", "tensao": "", "peso": "", "colaboradores": "", "ciclo": [], "s": "S1|S2", "f": "F1|F2", "p": "P1|P2", "plr": "a|b|c|d|e", "categoriaNpr": "B|1|2|3|4" },
+  "risks": [ { "mode": "add|update", "ponto": "", "descricao": "", "alvos": [], "consequencias": [], "lo": 5, "fe": 4, "dph": 6, "np": 1, "norma": "", "acoes": "", "prazo": "" } ],
+  "checklistUpdates": [ { "match": "", "status": "Conforme|Não Conforme|Atenção|N/A", "obs": "" } ],
+  "checklistAdd": [ { "norma": "", "requisito": "", "status": "Conforme|Não Conforme|Atenção|N/A", "obs": "" } ],
+  "sinteseGeral": "",
+  "generateSintese": false,
+  "exportDocx": false
+}
+Instrução do engenheiro: """${text}"""`;
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json' } })
+  });
+  if (!resp.ok) throw new Error('Gemini HTTP ' + resp.status);
+  const data = await resp.json();
+  const rawJson = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  const plan = JSON.parse(rawJson.replace(/^```json\s*|\s*```$/g, '').trim());
+  applyAgentPlan(plan, 'Gemini IA');
+}
+
+function runOfflineMultiTaskAgent(text) {
+  const n = normTxt(text);
+  const plan = { empresa: {}, machine: { ciclo: [] }, risks: [], checklistUpdates: [], checklistAdd: [] };
+
+  // 1. EMPRESA
+  const empMatch = text.match(/(?:raz[aã]o\s+social|empresa|cliente)\s*(?:[eé:]\s*)?([^.,;\n]+?)(?=,|\.|;|\bcnpj\b|\bm[aá]quina\b|\bequipamento\b|\bcidade\b|$)/i);
+  if (empMatch) plan.empresa.razaoSocial = cleanExtractedVal(empMatch[1]);
+  const cnpjMatch = text.match(/\b(\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2})\b/);
+  if (cnpjMatch) plan.empresa.cnpj = cnpjMatch[1];
+  const cidMatch = text.match(/(?:(?:cidade(?:\s+de)?|munic[ií]pio\s+de|em)\s+([A-ZÀ-Ú][A-ZÀ-Úa-zà-ú\s]{2,28}?)\s*[-–\/\s]\s*(AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO)\b|(?:,\s*|\.\s*|^)([A-ZÀ-Ú][A-ZÀ-Úa-zà-ú\s]{2,25}?)\s*[-–\/]\s*(AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO)\b)/i);
+  if (cidMatch) {
+    const cName = cidMatch[1] || cidMatch[3];
+    const uf = cidMatch[2] || cidMatch[4];
+    if (cName && uf) plan.empresa.cidadeUf = `${cleanExtractedVal(cName)} - ${uf.toUpperCase()}`;
+  }
+  const endMatch = text.match(/(?:endere[çc]o)\s*(?:[eé:]\s*)?([^.;\n]+?)(?=\.|;|\bcidade\b|\bm[aá]quina\b|$)/i);
+  if (endMatch) plan.empresa.endereco = cleanExtractedVal(endMatch[1]);
+  const artMatch = text.match(/\bart\s*(?:n[º°]?|n[uú]mero)?\s*[:#]?\s*([A-Z0-9.-]{5,24})/i);
+  if (artMatch) plan.empresa.art = artMatch[1];
+  const revMatch = text.match(/\brevis[aã]o\s*(?:n[º°]?|[eé:]\s*)?(\d{1,3})\b/i);
+  if (revMatch) plan.empresa.revisao = revMatch[1];
+
+  // 2. MÁQUINA
+  plan.newMachine = /\b(nova\s+maquina|adicionar\s+maquina|criar\s+maquina|outra\s+maquina)\b/.test(n);
+  const maqMatch = text.match(/(?:nova\s+m[aá]quina|adicionar\s+m[aá]quina|criar\s+m[aá]quina|m[aá]quina|equipamento)\s*(?:[eé:]\s*)?([^.,;\n]+?)(?=,|\.|;|\bfabricante\b|\bmarca\b|\bmodelo\b|\btag\b|\b[aá]rea\b|\bmotor\b|\bponto\b|$)/i);
+  if (maqMatch) plan.machine.nome = cleanExtractedVal(maqMatch[1]);
+  const tagMatch = text.match(/\b(?:tag|patrim[ôo]nio|c[óo]digo)\s*(?:[eé:]\s*)?([A-Z0-9#_-]{2,20})/i);
+  if (tagMatch) plan.machine.tag = cleanExtractedVal(tagMatch[1]);
+  const fabMatch = text.match(/\b(?:fabricante|marca)\s*(?:[eé:]\s*)?([^.,;\n]+?)(?=,|\.|;|\bmodelo\b|\btag\b|\b[aá]rea\b|\bponto\b|$)/i);
+  if (fabMatch) plan.machine.fabricante = cleanExtractedVal(fabMatch[1]);
+  const modMatch = text.match(/\bmodelo\s*(?:[eé:]\s*)?([^.,;\n]+?)(?=,|\.|;|\btag\b|\bfabricante\b|\b[aá]rea\b|\bponto\b|$)/i);
+  if (modMatch) plan.machine.modelo = cleanExtractedVal(modMatch[1]);
+  const areaMatch = text.match(/\b(?:[aá]rea|setor)\s*(?:[eé:]\s*)?([^.,;\n]+?)(?=,|\.|;|\bmotor\b|\bpot[eê]ncia\b|\bponto\b|$)/i);
+  if (areaMatch) plan.machine.area = cleanExtractedVal(areaMatch[1]);
+  const serMatch = text.match(/\b(?:n[uú]mero\s+de\s+s[eé]rie|s[eé]rie)\s*(?:[eé:]\s*)?([A-Z0-9._\/-]{2,30})/i);
+  if (serMatch) plan.machine.serie = cleanExtractedVal(serMatch[1]);
+  const potMatch = text.match(/\b(\d+(?:[.,]\d+)?\s*(?:cv|kw|hp|watts?))\b/i);
+  if (potMatch) plan.machine.potencia = potMatch[1].toUpperCase();
+  const tenMatch = text.match(/\b((?:110|127|220|380|440|480)\s*(?:v|volts?)(?:\s*(?:trif[aá]sic[oa]|monof[aá]sic[oa]|bif[aá]sic[oa]))?)\b/i);
+  if (tenMatch) plan.machine.tensao = tenMatch[1];
+  const pesoMatch = text.match(/\bpeso(?:\s+de)?\s*[:=]?\s*(\d+(?:[.,]\d+)?\s*(?:kg|quilos?|ton(?:eladas?)?))/i);
+  if (pesoMatch) plan.machine.peso = pesoMatch[1];
+  const colabMatch = text.match(/\b(\d{1,3})\s*(?:operador(?:es)?|colaborador(?:es)?|trabalhador(?:es)?)/i);
+  if (colabMatch) plan.machine.colaboradores = colabMatch[1];
+  if (/\boperacao\b/.test(n)) plan.machine.ciclo.push('Operação');
+  if (/\b(setup|troca)\b/.test(n)) plan.machine.ciclo.push('Setup / Troca');
+  if (/\bmanutencao\b/.test(n)) plan.machine.ciclo.push('Manutenção');
+  if (/\blimpeza\b/.test(n)) plan.machine.ciclo.push('Limpeza');
+  if (/\b(afiacao|ajuste)\b/.test(n)) plan.machine.ciclo.push('Afiação / Ajuste');
+
+  // 3. PLR / CATEGORIA ISO 13849-1
+  const sM = n.match(/\b(s1|s2)\b/); if (sM) plan.machine.s = sM[1].toUpperCase();
+  const fM = n.match(/\b(f1|f2)\b/); if (fM) plan.machine.f = fM[1].toUpperCase();
+  const pM = n.match(/\b(p1|p2)\b/); if (pM) plan.machine.p = pM[1].toUpperCase();
+  const catM = n.match(/categoria\s*(b|1|2|3|4)\b/); if (catM) plan.machine.categoriaNpr = catM[1].toUpperCase();
+  const plrM = n.match(/plr\s*([a-e])\b/); if (plrM) plan.machine.plr = plrM[1];
+
+  // 4. PONTOS DE RISCO (suporta múltiplos pontos na mesma fala)
+  const riskSegments = text.split(/(?=\b(?:novo\s+ponto\s+de\s+risco|outro\s+ponto\s+de\s+risco|segundo\s+ponto|terceiro\s+ponto|outro\s+ponto|novo\s+ponto|ponto\s+de\s+risco)\b)/i);
+  riskSegments.forEach(seg => {
+    const sn = normTxt(seg);
+    const hasRiskTrigger = /\b(ponto de risco|outro ponto|novo ponto|segundo ponto|terceiro ponto|risco de|hrn|cortina de luz|protecao fixa|esmagamento|amputacao|corte|aprisionamento|lo\s*\d|fe\s*\d|dph\s*\d)\b/.test(sn);
+    if (!hasRiskTrigger) return;
+    if (/^(empresa|raz[aã]o|m[aá]quina)/i.test(seg.trim()) && !/ponto\s+de\s+risco|novo\s+ponto|outro\s+ponto/i.test(seg)) return;
+
+    const r = { mode: /\b(atualizar\s+ponto|neste\s+ponto|ponto\s+atual)\b/.test(sn) ? 'update' : 'add', alvos: [], consequencias: [] };
+    const titleM = seg.match(/(?:novo\s+ponto(?:\s+de\s+risco)?|outro\s+ponto(?:\s+de\s+risco)?|segundo\s+ponto|terceiro\s+ponto|ponto\s+de\s+risco)\s*(?:na|no|em|[eé:])?\s*([^.,;\n]+?)(?=,|\.|;|\bcom\b|\bris(?:co|cos)\b|\bhrn\b|$)/i);
+    r.ponto = titleM ? cleanExtractedVal(titleM[1]) : 'Ponto de Risco (Voz)';
+    r.descricao = cleanExtractedVal(seg);
+
+    if (/\b(mao|maos|dedo|dedos|braco|membros? superiores?)\b/.test(sn)) r.alvos.push('Membros Superiores');
+    if (/\b(pe|pes|perna|pernas|membros? inferiores?)\b/.test(sn)) r.alvos.push('Membros Inferiores');
+    if (/\b(olho|olhos|visao|face|rosto)\b/.test(sn)) r.alvos.push('Olhos');
+    if (/\b(corpo inteiro|tronco|torax)\b/.test(sn)) r.alvos.push('Corpo Inteiro');
+
+    if (/\b(corte|laceracao)\b/.test(sn)) r.consequencias.push('Corte');
+    if (/\bfratura\b/.test(sn)) r.consequencias.push('Fratura');
+    if (/\b(esmagamento|prensagem)\b/.test(sn)) r.consequencias.push('Esmagamento');
+    if (/\bamputacao\b/.test(sn)) r.consequencias.push('Amputação');
+    if (/\b(morte|obito)\b/.test(sn)) r.consequencias.push('Óbito');
+    if (/\b(aprisionamento|arrastamento|agarramento|emaranhamento|polia|correia|engrenagem|eixo)\b/.test(sn)) r.consequencias.push('Aprisionamento');
+    if (/\b(projecao|cavaco|particula|estilhaco)\b/.test(sn)) r.consequencias.push('Projeção');
+    if (/\bqueda\b/.test(sn)) r.consequencias.push('Queda');
+    if (/\b(queimadura|termic|calor)\b/.test(sn)) r.consequencias.push('Térmico');
+    if (/\bquimic\b/.test(sn)) r.consequencias.push('Químico');
+
+    // Explicit HRN numbers or qualitative risk level
+    const loM = sn.match(/\blo\s*[:=]?\s*(\d+(?:[.,]\d+)?)/);
+    const feM = sn.match(/\bfe\s*[:=]?\s*(\d+(?:[.,]\d+)?)/);
+    const dphM = sn.match(/\bdph\s*[:=]?\s*(\d+(?:[.,]\d+)?)/);
+    const npM = sn.match(/\bnp\s*[:=]?\s*(\d+)/);
+    if (loM) r.lo = snapWeight(parseFloat(loM[1].replace(',','.')), [0.033,0.1,0.5,1,2,5,8,10,15]);
+    if (feM) r.fe = snapWeight(parseFloat(feM[1].replace(',','.')), [0.5,1,1.5,2.5,4,5]);
+    if (dphM) r.dph = snapWeight(parseFloat(dphM[1].replace(',','.')), [0.1,0.5,1,2,4,6,10,15]);
+    if (npM) r.np = snapWeight(parseFloat(npM[1]), [1,2,4,8,12]);
+    if (!loM && !feM && !dphM) {
+      if (/\b(hrn\s+alto|risco\s+alto|risco\s+critico|prioridade\s+alta)\b/.test(sn)) { r.lo = 8; r.fe = 4; r.dph = 6; r.np = 1; }
+      else if (/\b(hrn\s+medio|risco\s+medio|moderado)\b/.test(sn)) { r.lo = 2; r.fe = 2.5; r.dph = 4; r.np = 1; }
+      else if (/\b(hrn\s+baixo|risco\s+baixo)\b/.test(sn)) { r.lo = 1; r.fe = 1.5; r.dph = 1; r.np = 1; }
+    }
+
+    const normas = [];
+    ['NR-12','NR-10','Anexo VIII','ISO 12100','ISO 13849','ISO 13850','ISO 13855','ISO 13857','ISO 14119','ISO 14120','NBR 13929','NBR 13930'].forEach(nm => {
+      if (sn.includes(normTxt(nm).replace('-',' ')) || sn.includes(normTxt(nm))) normas.push(nm);
+    });
+    if (normas.length) r.norma = normas.join(' / ');
+
+    const acM = seg.match(/\b(?:instalar|colocar|adequar|substituir|implantar|providenciar|a[çc][aã]o|acoes|medida)\s+([^.;\n]+?)(?=\.|;|\bem\s+at[eé]|\bprazo|\boutro\s+ponto|\bnovo\s+ponto|$)/i);
+    if (acM) r.acoes = cleanExtractedVal(acM[0]);
+
+    const przM = seg.match(/\b(?:prazo(?:\s+de)?\s+|em\s+)(imediato|at[eé]\s+\d+\s+dias?|\d+\s+dias?)\b/i);
+    if (przM) r.prazo = cleanExtractedVal(przM[1]);
+
+    plan.risks.push(r);
+  });
+
+  // 5. CHECKLIST NR-12
+  const chkRules = [
+    { key: 'arranjo fisico', re: /\b(arranjo fisico|circulacao|demarcacao)\b/ },
+    { key: 'eletrica', re: /\b(eletric[ao]?|aterramento|painel|nr-10|nr 10)\b/ },
+    { key: 'capacitacao', re: /\b(capacitacao|treinamento|operadores capacitados)\b/ },
+    { key: 'protecoes', re: /\b(protecoes? fixas?|protecoes? moveis|enclausuramento|protecoes?)\b/ },
+    { key: 'intertravamento', re: /\b(intertravamento|chave de seguranca|porta com sensor)\b/ },
+    { key: 'emergencia', re: /\b(parada de emergencia|batedor de emergencia|botao de emergencia)\b/ }
+  ];
+  text.split(/[.;\n]+/).forEach(clause => {
+    const cn = normTxt(clause);
+    let st = null;
+    if (/\b(nao conforme|irregular|reprovad[oa]|faltando|inexistente)\b/.test(cn)) st = 'Não Conforme';
+    else if (/\b(conforme|adequado|aprovado|\bok\b)\b/.test(cn)) st = 'Conforme';
+    else if (/\b(atencao|parcial|pendencia)\b/.test(cn)) st = 'Atenção';
+    else if (/\b(nao se aplica|n\/a)\b/.test(cn)) st = 'N/A';
+
+    const addChk = clause.match(/adicionar\s+(?:no\s+)?checklist\s*[:\-]?\s*(.+)/i);
+    if (addChk) {
+      plan.checklistAdd.push({ norma: 'NR-12', requisito: cleanExtractedVal(addChk[1]), status: st || 'Não Conforme', obs: '' });
+      return;
+    }
+    if (st) {
+      chkRules.forEach(rule => {
+        if (rule.re.test(cn)) plan.checklistUpdates.push({ match: rule.key, status: st, obs: '' });
+      });
+    }
+  });
+
+  // 6. SÍNTESE & EXPORTAR
+  if (/\b(gerar sintese|resumir laudo|resumo executivo)\b/.test(n)) plan.generateSintese = true;
+  const sinM = text.match(/\b(?:s[ií]ntese|conclus[aã]o\s+geral)\s*(?:[eé:]\s*)?(.+)/i);
+  if (sinM && !plan.generateSintese) plan.sinteseGeral = cleanExtractedVal(sinM[1]);
+  if (/\b(gerar docx|exportar docx|gerar laudo|salvar word)\b/.test(n)) plan.exportDocx = true;
+
+  applyAgentPlan(plan, 'Agente Local Offline');
+}
+
+function applyAgentPlan(plan, engineLabel) {
+  agentUndoSnapshot = JSON.stringify(activeReport);
+  document.getElementById('btn-agent-undo').style.display = 'inline-flex';
+  const logs = [];
+
+  // 1. Empresa
+  if (plan.empresa) {
+    const e = activeReport.empresa;
+    const changed = [];
+    ['razaoSocial','cnpj','cidadeUf','endereco','art','revisao'].forEach(k => {
+      if (plan.empresa[k]) { e[k] = plan.empresa[k]; changed.push(k); }
+    });
+    if (changed.length) logs.push({ title: '1. Empresa Atualizada', detail: changed.map(k => `${k}: ${e[k]}`).join(' • ') });
+  }
+
+  // 2. Nova máquina ou atualizar atual
+  if (plan.newMachine) {
+    const idx = activeReport.machines.length + 1;
+    activeReport.machines.push({
+      nome: plan.machine?.nome || ('Máquina ' + idx), tag: '', fabricante: '', modelo: '', area: '', serie: '',
+      comprimento: '', largura: '', altura: '', ferramenta: '', peso: '', mesa: '', corte: '',
+      colaboradores: '', limitesArea: '', potencia: '', tensao: '', ciclo: [],
+      s: 'S2', f: 'F2', p: 'P2', plr: 'e', categoriaNpr: '4', risks: []
+    });
+    activeMaqIdx = activeReport.machines.length - 1;
+    activeRiskIdx = 0;
+    logs.push({ title: '2. Nova Máquina Criada', detail: `${activeReport.machines[activeMaqIdx].nome}` });
+  }
+
+  if (plan.machine) {
+    const m = curMaq();
+    const mc = [];
+    ['nome','tag','fabricante','modelo','area','serie','potencia','tensao','peso','colaboradores','s','f','p','plr','categoriaNpr'].forEach(k => {
+      if (plan.machine[k]) { m[k] = plan.machine[k]; mc.push(`${k}: ${m[k]}`); }
+    });
+    if (Array.isArray(plan.machine.ciclo) && plan.machine.ciclo.length) {
+      const merged = new Set([...(m.ciclo || []), ...plan.machine.ciclo.filter(x => CICLO_OPTS.includes(x))]);
+      m.ciclo = Array.from(merged);
+      mc.push('ciclo: ' + m.ciclo.join(', '));
+    }
+    if (m.s && m.f && m.p) {
+      const res = computePlr(m.s, m.f, m.p);
+      m.plr = plan.machine.plr || res.plr;
+      m.categoriaNpr = plan.machine.categoriaNpr || res.cat;
+    }
+    if (mc.length) logs.push({ title: '2/3. Dados da Máquina & PLr', detail: mc.join(' • ') });
+  }
+
+  // 4. Pontos de risco
+  if (Array.isArray(plan.risks) && plan.risks.length) {
+    const m = curMaq();
+    plan.risks.forEach((rp, idx) => {
+      let target = null;
+      const canReuseEmptyFirst = m.risks.length === 1 && !m.risks[0].descricao && !m.risks[0].acoes && /^Ponto de Risco #1$/i.test(m.risks[0].ponto || '');
+      if (rp.mode === 'update' && m.risks.length) {
+        target = curRisk();
+      } else if (idx === 0 && canReuseEmptyFirst) {
+        target = m.risks[0];
+      } else {
+        target = { ponto: '', descricao: '', alvos: [], consequencias: [], lo: 5, fe: 4, dph: 6, np: 1, norma: '', acoes: '', prazo: '', iso13855: '', vozNota: '', fotoDataUrl: '' };
+        m.risks.push(target);
+        activeRiskIdx = m.risks.length - 1;
+      }
+      if (rp.ponto) target.ponto = rp.ponto;
+      if (rp.descricao) target.descricao = rp.descricao;
+      if (Array.isArray(rp.alvos) && rp.alvos.length) target.alvos = Array.from(new Set([...(target.alvos||[]), ...rp.alvos.filter(x => ALVO_OPTS.includes(x))]));
+      if (Array.isArray(rp.consequencias) && rp.consequencias.length) target.consequencias = Array.from(new Set([...(target.consequencias||[]), ...rp.consequencias.filter(x => CONSEQ_OPTS.includes(x))]));
+      if (rp.lo) target.lo = rp.lo;
+      if (rp.fe) target.fe = rp.fe;
+      if (rp.dph) target.dph = rp.dph;
+      if (rp.np) target.np = rp.np;
+      if (rp.norma) target.norma = rp.norma;
+      if (rp.acoes) target.acoes = target.acoes ? (target.acoes + '\n' + rp.acoes) : rp.acoes;
+      if (rp.prazo) target.prazo = rp.prazo;
+      const hrn = +((target.lo||0)*(target.fe||0)*(target.dph||0)*(target.np||0)).toFixed(1);
+      logs.push({ title: `4. Ponto de Risco (${rp.mode === 'update' ? 'Atualizado' : 'Adicionado'})`, detail: `${target.ponto || 'Sem título'} • HRN ${hrn}${target.prazo ? ' • Prazo: ' + target.prazo : ''}` });
+    });
+  }
+
+  // 5. Checklist NR-12
+  if (Array.isArray(plan.checklistUpdates)) {
+    plan.checklistUpdates.forEach(u => {
+      const mNorm = normTxt(u.match);
+      const item = (activeReport.checklist || []).find(c => normTxt(c.norma + ' ' + c.requisito).includes(mNorm));
+      if (item && u.status) {
+        item.status = u.status;
+        if (u.obs) item.obs = u.obs;
+        logs.push({ title: '5. Checklist NR-12 Atualizado', detail: `${item.norma} → ${u.status}` });
+      }
+    });
+  }
+  if (Array.isArray(plan.checklistAdd)) {
+    plan.checklistAdd.forEach(a => {
+      if (!a.requisito) return;
+      activeReport.checklist.push({ norma: a.norma || 'NR-12', requisito: a.requisito, status: a.status || 'Não Conforme', obs: a.obs || '' });
+      logs.push({ title: '5. Novo Item no Checklist', detail: `${a.requisito} (${a.status || 'Não Conforme'})` });
+    });
+  }
+
+  // 6. Síntese & Exportação
+  if (plan.generateSintese) {
+    let alt = 0, med = 0, bxi = 0, nc = 0;
+    activeReport.machines.forEach(m => (m.risks || []).forEach(r => {
+      const h = (r.lo||0)*(r.fe||0)*(r.dph||0)*(r.np||0);
+      if (h > 50) alt++; else if (h > 5) med++; else bxi++;
+    }));
+    (activeReport.checklist || []).forEach(c => { if (c.status === 'Não Conforme') nc++; });
+    activeReport.sinteseGeral = `Foram avaliadas ${activeReport.machines.length} máquina(s), totalizando ${alt + med + bxi} ponto(s) de risco (${alt} de prioridade alta, ${med} média e ${bxi} baixa) e ${nc} item(ns) não conforme(s) no checklist NR-12. As adequações de prioridade alta devem ser priorizadas antes da liberação operacional contínua.`;
+    logs.push({ title: '6. Síntese Executiva Gerada', detail: activeReport.sinteseGeral });
+  } else if (plan.sinteseGeral) {
+    activeReport.sinteseGeral = plan.sinteseGeral;
+    logs.push({ title: '6. Síntese Atualizada', detail: plan.sinteseGeral });
+  }
+
+  if (!logs.length) {
+    logs.push({ ok: false, title: 'Nenhuma tarefa automática reconhecida neste texto', detail: 'Tente incluir palavras-chave como: Empresa..., CNPJ..., Máquina..., Ponto de risco..., Risco de esmagamento..., Parada de emergência não conforme..., ou configure sua chave Gemini.' });
+  }
+
+  saveState();
+  renderAll();
+  setAgentStatus(`✅ ${logs.filter(l => l.ok !== false).length} tarefa(s) executada(s) via ${engineLabel}.`);
+  renderAgentLogs(logs);
+
+  if (plan.exportDocx) {
+    closeAgentModal();
+    switchTab(3);
+    exportDocx(false);
+  }
+}
+
 window.__onAndroidBack = function() {
+  const agModal = document.getElementById('modal-agent');
+  if (agModal && agModal.classList.contains('open')) { closeAgentModal(); return 'handled'; }
   const modal = document.getElementById('modal-laudos');
   if (modal.classList.contains('open')) { closeLaudosModal(); return 'handled'; }
   if (currentTab > 0) { switchTab(currentTab - 1); return 'handled'; }
