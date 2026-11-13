@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>HardBase NR-12 Pro</title>
+  <style>
+    :root {
+      --navy: #1F4E79;
+      --dark: #0A111F;
+      --burgundy: #7D1820;
+      --bg: #F1F5F9;
+      --card: #FFFFFF;
+      --text: #1E293B;
+      --muted: #64748B;
+      --border: #CBD5E1;
+      --high: #F8CBAD;
+      --med: #FFF2CC;
+      --low: #C6E0B4;
+      --blue: #2563EB;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0; padding: 0; height: 100%; overflow: hidden;
+      font-family: Arial, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg); color: var(--text); font-size: 14px;
+    }
+    .app-shell { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+    .header {
+      background: var(--dark); color: #fff; padding: 10px 14px;
+      border-bottom: 3px solid var(--burgundy); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    }
+    .header-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .header-logo {
+      width: 38px; height: 38px; border-radius: 8px; object-fit: cover;
+      border: 1px solid rgba(255,255,255,0.2); background: #0A111F; flex-shrink: 0;
+    }
+    .header-title { font-size: 15px; font-weight: 800; letter-spacing: 0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .header-sub { font-size: 11px; color: #93C5FD; font-weight: 600; }
+    .header-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .pill-btn {
+      background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px; padding: 5px 9px; font-size: 11px; font-weight: 700; cursor: pointer;
+    }
+    .tabs {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      background: #fff; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .tab-btn {
+      border: none; background: transparent; padding: 10px 4px;
+      font-size: 12px; font-weight: 700; color: var(--muted);
+      border-bottom: 3px solid transparent; cursor: pointer;
+    }
+    .tab-btn.active {
+      color: var(--burgundy); border-bottom-color: var(--burgundy); background: #FFF1F2;
+    }
+    .content { flex: 1; overflow-y: auto; padding: 12px; padding-bottom: 24px; }
+    .tab-panel { display: none; flex-direction: column; gap: 12px; }
+    .tab-panel.active { display: flex; }
+    .card {
+      background: var(--card); border: 1px solid #E2E8F0;
+      border-radius: 14px; padding: 12px; box-shadow: 0 1px 3px rgba(15,23,42,0.05);
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .card-title {
+      font-size: 12px; font-weight: 800; text-transform: uppercase;
+      color: var(--navy); letter-spacing: 0.4px;
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    }
+    .card-title.burgundy { color: var(--burgundy); }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    label.lbl { display: block; font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 3px; }
+    input[type="text"], input[type="number"], select, textarea {
+      width: 100%; padding: 8px 10px; border: 1px solid var(--border);
+      border-radius: 10px; font-size: 13px; font-family: inherit;
+      background: #fff; color: var(--text);
+    }
+    textarea { resize: vertical; line-height: 1.35; }
+    input:focus, select:focus, textarea:focus {
+      outline: none; border-color: var(--navy); box-shadow: 0 0 0 2px rgba(31,78,121,0.15);
+    }
+    .h-scroll { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+    .h-scroll::-webkit-scrollbar { display: none; }
+    .chip {
+      border: 1px solid var(--border); background: #F8FAFC; color: #334155;
+      padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: 700;
+      white-space: nowrap; cursor: pointer;
+    }
+    .chip.active { background: var(--burgundy); color: #fff; border-color: var(--burgundy); }
+    .chip.navy.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+    .btn {
+      border: none; border-radius: 10px; padding: 9px 12px;
+      font-size: 12px; font-weight: 800; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .btn-primary { background: var(--blue); color: #fff; }
+    .btn-navy { background: var(--navy); color: #fff; }
+    .btn-burgundy { background: var(--burgundy); color: #fff; }
+    .btn-amber { background: #F59E0B; color: #0F172A; }
+    .btn-green { background: #16A34A; color: #fff; }
+    .btn-soft { background: #E2E8F0; color: #1E293B; }
+    .btn-danger { background: #FEE2E2; color: #991B1B; }
+    .btn-sm { padding: 5px 9px; font-size: 11px; border-radius: 8px; }
+    .badge {
+      display: inline-block; padding: 4px 10px; border-radius: 8px;
+      font-size: 12px; font-weight: 800; color: #1F2933; text-align: center;
+    }
+    .risk-alto { background: var(--high); }
+    .risk-medio { background: var(--med); }
+    .risk-baixo { background: var(--low); }
+    .chk-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chk-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 8px;
+      padding: 5px 8px; font-size: 11px; font-weight: 600; cursor: pointer;
+    }
+    .chk-pill.checked { background: #FEE2E2; border-color: var(--burgundy); color: var(--burgundy); font-weight: 700; }
+    .canvas-wrap {
+      position: relative; background: #0F172A; border-radius: 12px; overflow: hidden;
+      min-height: 170px; display: flex; align-items: center; justify-content: center;
+    }
+    canvas#photo-canvas { width: 100%; height: auto; display: block; touch-action: none; }
+    .photo-empty { color: #94A3B8; font-size: 12px; padding: 28px 16px; text-align: center; }
+    .color-dots { display: flex; align-items: center; gap: 8px; }
+    .dot {
+      width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff;
+      box-shadow: 0 0 0 1px #94A3B8; cursor: pointer;
+    }
+    .dot.active { box-shadow: 0 0 0 3px #0F172A; transform: scale(1.1); }
+    .footer-bar {
+      background: #fff; border-top: 1px solid var(--border);
+      padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; flex-shrink: 0;
+    }
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(15,23,42,0.65); z-index: 50;
+      display: none; align-items: center; justify-content: center; padding: 16px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-box {
+      background: #fff; border-radius: 16px; max-width: 420px; width: 100%;
+      max-height: 85vh; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px;
+    }
+    .stat-box { border-radius: 10px; padding: 8px; text-align: center; font-weight: 800; color: #1F2933; }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- HEADER OFICIAL HARDBASE -->
+  <div class="header">
+    <div class="header-left">
+      <img src="file:///android_asset/hb_logo.jpg" onerror="this.style.display='none'" class="header-logo" alt="HB" />
+      <div style="min-width:0">
+        <div class="header-title">HardBase NR-12 Pro</div>
+        <div class="header-sub" id="hdr-client-sub">Apreciação de Riscos • NBR ISO</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="pill-btn" onclick="openLaudosModal()">Laudos</button>
+      <button class="pill-btn" onclick="checkOtaUpdate()">Atualizar</button>
+    </div>
+  </div>
+
+  <!-- ABAS -->
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-btn-0" onclick="switchTab(0)">1. Dados</button>
+    <button class="tab-btn" id="tab-btn-1" onclick="switchTab(1)">2. Riscos/ISO</button>
+    <button class="tab-btn" id="tab-btn-2" onclick="switchTab(2)">3. NR-12</button>
+    <button class="tab-btn" id="tab-btn-3" onclick="switchTab(3)">4. Laudo DOCX</button>
+  </div>
+
+  <!-- CONTEÚDO -->
+  <div class="content" id="scroll-area">
+
+    <!-- ============ ABA 1: DADOS & MÁQUINAS ============ -->
+    <div class="tab-panel active" id="panel-0">
+      <div class="card">
+        <div class="card-title burgundy">
+          <span>1. Identificação da Empresa (Razão Social Completa)</span>
+        </div>
+        <div>
+          <label class="lbl">Razão Social (sem abreviações)</label>
+          <input type="text" id="emp-razao" oninput="syncCompany()" placeholder="Ex.: BITTENCOURT &amp; ZEM LTDA" />
+        </div>
+        <div class="grid-2">
+          <div>
+            <label class="lbl">CNPJ</label>
+            <input type="text" id="emp-cnpj" oninput="syncCompany()" placeholder="00.000.000/0000-00" />
+          </div>
+          <div>
+            <label class="lbl">Cidade / UF</label>
+            <input type="text" id="emp-cidade" oninput="syncCompany()" placeholder="Curitiba - PR" />
+          </div>
+        </div>
+        <div>
+          <label class="lbl">Endereço Completo</label>
+          <input type="text" id="emp-end" oninput="syncCompany()" placeholder="Rua, nº, Bairro, Cidade - UF, CEP" />
+        </div>
+        <div class="grid-3">
+          <div>
+            <label class="lbl">Revisão</label>
+            <input type="text" id="emp-rev" oninput="syncCompany()" value="0" />
+          </div>
+          <div>
+            <label class="lbl">Data</label>
+            <input type="text" id="emp-data" oninput="syncCompany()" />
+          </div>
+          <div>
+            <label class="lbl">Nº ART</label>
+            <input type="text" id="emp-art" oninput="syncCompany()" placeholder="Opcional" />
+          </div>
+        </div>
+      </div>
+
+      <!-- INVENTÁRIO MULTI-MÁQUINAS -->
+      <div class="card">
+        <div class="card-title">
+          <span>5.1 Lista de Máquinas (<span id="maq-count">1</span>)</span>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-navy btn-sm" onclick="addMachine()">+ Máquina</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteCurrentMachine()">Excluir</button>
+          </div>
+        </div>
+
+        <div class="h-scroll" id="machine-chips"></div>
+
+        <div>
+          <label class="lbl">Preset Rápido de Máquina (Preenche pontos &amp; normas)</label>
+          <select id="maq-preset" onchange="applyMachinePreset(this.value)">
+            <option value="">-- Selecionar modelo para agilizar --</option>
+            <option value="serra_fita">Serra Fita (Anexo VIII NR-12 / Açougue)</option>
+            <option value="prensa">Prensa Mecânica / Excêntrica (Anexo VIII + NBR 13930)</option>
+            <option value="torno">Torno / Fresa / Usinagem (ISO 14120 / 14119)</option>
+            <option value="esteira">Transportador Contínuo / Esteira (NR-12.85)</option>
+            <option value="guilhotina">Guilhotina / Dobradeira</option>
+          </select>
+        </div>
+
+        <div class="grid-3">
+          <div style="grid-column: span 2;">
+            <label class="lbl">1. Máquina / Equipamento</label>
+            <input type="text" id="maq-nome" oninput="syncMachine()" />
+          </div>
+          <div>
+            <label class="lbl">2. Tag</label>
+            <input type="text" id="maq-tag" oninput="syncMachine()" style="font-weight:700;color:#7D1820;" />
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <label class="lbl">3. Fabricante</label>
+            <input type="text" id="maq-fab" oninput="syncMachine()" />
+          </div>
+          <div>
+            <label class="lbl">4. Modelo</label>
+            <input type="text" id="maq-mod" oninput="syncMachine()" />
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <label class="lbl">5. Área / Setor de Instalação</label>
+            <input type="text" id="maq-area" oninput="syncMachine()" />
+          </div>
+          <div>
+            <label class="lbl">6. Nº Série / Patrimônio</label>
+            <input type="text" id="maq-serie" oninput="syncMachine()" />
+          </div>
+        </div>
+
+        <div class="card-title" style="margin-top:4px;font-size:11px;">Ficha Técnica Completa (16 Campos)</div>
+        <div class="grid-3">
+          <div><label class="lbl">7. Comprimento</label><input type="text" id="maq-comp" oninput="syncMachine()" placeholder="ex: 800 mm" /></div>
+          <div><label class="lbl">8. Largura</label><input type="text" id="maq-larg" oninput="syncMachine()" placeholder="ex: 870 mm" /></div>
+          <div><label class="lbl">9. Altura</label><input type="text" id="maq-alt" oninput="syncMachine()" placeholder="ex: 1790 mm" /></div>
+        </div>
+        <div class="grid-2">
+          <div><label class="lbl">10. Ferramenta / Lâmina</label><input type="text" id="maq-ferr" oninput="syncMachine()" placeholder="3150 x 15,8 mm" /></div>
+          <div><label class="lbl">11. Peso</label><input type="text" id="maq-peso" oninput="syncMachine()" placeholder="ex: 104 kg" /></div>
+        </div>
+        <div class="grid-2">
+          <div><label class="lbl">12. Dimensões da Mesa</label><input type="text" id="maq-mesa" oninput="syncMachine()" placeholder="680 x 780 mm" /></div>
+          <div><label class="lbl">13. Dimensões de Corte/Op.</label><input type="text" id="maq-corte" oninput="syncMachine()" placeholder="390 x 420 mm" /></div>
+        </div>
+        <div class="grid-2">
+          <div><label class="lbl">14. Nº Colaboradores</label><input type="text" id="maq-colab" oninput="syncMachine()" placeholder="ex: 4" /></div>
+          <div><label class="lbl">15. Limites (Área m²)</label><input type="text" id="maq-limites" oninput="syncMachine()" placeholder="ex: 2 x 3 = 6 m²" /></div>
+        </div>
+        <div class="grid-2">
+          <div><label class="lbl">16a. Potência Instalada</label><input type="text" id="maq-pot" oninput="syncMachine()" placeholder="ex: 1,5 CV" /></div>
+          <div><label class="lbl">16b. Tensão Potência / Cmd</label><input type="text" id="maq-tensao" oninput="syncMachine()" placeholder="220Vca / 24Vcc" /></div>
+        </div>
+
+        <div>
+          <label class="lbl">Ciclo de Vida Avaliado (ISO 12100 item 5.3)</label>
+          <div class="chk-grid" id="ciclo-pills"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title burgundy">Responsável Técnico</div>
+        <div style="font-size:13px;font-weight:700;">Eng. Isaque Fernando Monteiro</div>
+        <div style="font-size:12px;color:#475569;">Eng. Mecânico e Eng. de Segurança do Trabalho • CREA/PR nº 213467/D • (41) 98482-8410</div>
+      </div>
+    </div>
+
+    <!-- ============ ABA 2: PONTOS DE RISCO, FOTOS + SETAS & ISO ============ -->
+    <div class="tab-panel" id="panel-1">
+      <!-- Categorização Máquina NBR 14153 + PLr -->
+      <div class="card">
+        <div class="card-title">
+          <span>Categoria NBR 14153 &amp; PLr (ISO 13849-1) — <span id="lbl-maq-tag-2">SF#001</span></span>
+        </div>
+        <div class="grid-3">
+          <div>
+            <label class="lbl">Severidade</label>
+            <select id="plr-s" onchange="syncPlr()">
+              <option value="S1">S1 — Leve</option>
+              <option value="S2" selected>S2 — Sério</option>
+            </select>
+          </div>
+          <div>
+            <label class="lbl">Frequência</label>
+            <select id="plr-f" onchange="syncPlr()">
+              <option value="F1">F1 — Raro</option>
+              <option value="F2" selected>F2 — Frequente</option>
+            </select>
+          </div>
+          <div>
+            <label class="lbl">Evitar Perigo</label>
+            <select id="plr-p" onchange="syncPlr()">
+              <option value="P1">P1 — Possível</option>
+              <option value="P2" selected>P2 — Impossível</option>
+            </select>
+          </div>
+        </div>
+        <div id="plr-result-box" class="badge risk-alto" style="display:flex;justify-content:space-between;padding:8px 12px;">
+          <span>PLr Requerido: e</span><span>Categoria 4</span>
+        </div>
+      </div>
+
+      <!-- Pontos de Risco da Máquina -->
+      <div class="card">
+        <div class="card-title burgundy">
+          <span>Pontos de Risco (<span id="risk-count">1</span>)</span>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-navy btn-sm" onclick="addRiskPoint()">+ Ponto</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteCurrentRisk()">Excluir</button>
+          </div>
+        </div>
+
+        <div class="h-scroll" id="risk-chips"></div>
+
+        <div>
+          <label class="lbl">Nome do Ponto de Risco</label>
+          <input type="text" id="r-ponto" oninput="syncRisk()" placeholder="Ex.: Lâmina de corte" />
+        </div>
+
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+            <label class="lbl" style="margin:0;">Descrição do Ponto de Risco / Funcionamento</label>
+            <button class="btn btn-primary btn-sm" onclick="voiceFor('r-desc')">🎙️ Ditar</button>
+          </div>
+          <textarea id="r-desc" rows="3" oninput="syncRisk()"></textarea>
+        </div>
+
+        <!-- FOTO + SETAS + TIMEMARK + NOTA -->
+        <div style="border-top:1px solid #E2E8F0;padding-top:8px;display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span style="font-size:12px;font-weight:800;color:#1F4E79;">Evidência Fotográfica (Setas + Timemark)</span>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-amber btn-sm" onclick="document.getElementById('inp-cam').click()">📷 Câmera</button>
+              <button class="btn btn-soft btn-sm" onclick="document.getElementById('inp-gal').click()">🖼️ Galeria</button>
+            </div>
+          </div>
+          <input type="file" id="inp-cam" accept="image/*" capture="environment" style="display:none" onchange="onPhotoSelected(this)" />
+          <input type="file" id="inp-gal" accept="image/*" style="display:none" onchange="onPhotoSelected(this)" />
+
+          <div class="canvas-wrap" id="canvas-wrap">
+            <div class="photo-empty" id="photo-empty">Nenhuma foto neste ponto ainda.<br/>Toque em <strong>📷 Câmera</strong> para registrar e marcar setas sem abrir o teclado.</div>
+            <canvas id="photo-canvas" style="display:none;"></canvas>
+          </div>
+
+          <div id="photo-tools" style="display:none;flex-direction:column;gap:8px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+              <div class="color-dots">
+                <span style="font-size:11px;font-weight:700;color:#475569;">Seta:</span>
+                <div class="dot active" style="background:#EF4444" onclick="setArrowColor('#EF4444', this)"></div>
+                <div class="dot" style="background:#F59E0B" onclick="setArrowColor('#F59E0B', this)"></div>
+                <div class="dot" style="background:#22C55E" onclick="setArrowColor('#22C55E', this)"></div>
+                <div class="dot" style="background:#3B82F6" onclick="setArrowColor('#3B82F6', this)"></div>
+              </div>
+              <div style="display:flex;gap:6px;">
+                <button class="btn btn-soft btn-sm" onclick="undoArrow()">Desfazer</button>
+                <button class="btn btn-danger btn-sm" onclick="clearArrows()">Limpar</button>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;">
+              <button class="btn btn-soft btn-sm" onclick="refreshGps()">📍 Atualizar GPS</button>
+              <button class="btn btn-green btn-sm" id="btn-timemark" onclick="toggleTimemark()">Carimbo: ON</button>
+              <button class="btn btn-primary btn-sm" onclick="savePhotoToDevice()">💾 Salvar Foto</button>
+            </div>
+          </div>
+
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+              <label class="lbl" style="margin:0;">Nota da Foto / Campo (sai abaixo da imagem no DOCX)</label>
+              <button class="btn btn-primary btn-sm" onclick="voiceFor('r-voz')">🎙️ Nota</button>
+            </div>
+            <input type="text" id="r-voz" oninput="syncRisk()" placeholder="Observação falada ou digitada..." />
+          </div>
+        </div>
+
+        <!-- ALVO E CONSEQUÊNCIAS -->
+        <div>
+          <label class="lbl">Alvo do Risco</label>
+          <div class="chk-grid" id="alvos-grid"></div>
+        </div>
+        <div>
+          <label class="lbl">Consequências Prováveis (10 opções)</label>
+          <div class="chk-grid" id="conseq-grid"></div>
+        </div>
+
+        <!-- CALCULADORA HRN -->
+        <div style="border-top:1px solid #E2E8F0;padding-top:8px;display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:12px;font-weight:800;color:#7D1820;">Nível de Risco HRN (ABNT ISO 12100)</span>
+            <span id="hrn-badge" class="badge risk-alto">Alto (240)</span>
+          </div>
+          <div class="grid-2">
+            <div>
+              <label class="lbl">Probabilidade (LO)</label>
+              <select id="r-lo" onchange="syncRisk()">
+                <option value="0.033">0,033 — Quase impossível</option>
+                <option value="1">1 — Altamente improvável</option>
+                <option value="1.5">1,5 — Improvável</option>
+                <option value="2">2 — Possível</option>
+                <option value="5">5 — Alguma chance</option>
+                <option value="8">8 — Provável</option>
+                <option value="10">10 — Muito provável</option>
+                <option value="15">15 — Certeza</option>
+              </select>
+            </div>
+            <div>
+              <label class="lbl">Frequência (FE)</label>
+              <select id="r-fe" onchange="syncRisk()">
+                <option value="0.5">0,5 — Anualmente</option>
+                <option value="1">1 — Mensalmente</option>
+                <option value="1.5">1,5 — Semanalmente</option>
+                <option value="2.5">2,5 — Diariamente</option>
+                <option value="4">4 — Em termos de horas</option>
+                <option value="5">5 — Constantemente</option>
+              </select>
+            </div>
+            <div>
+              <label class="lbl">Grau de Dano (DPH)</label>
+              <select id="r-dph" onchange="syncRisk()">
+                <option value="0.1">0,1 — Arranhão / Escoriação</option>
+                <option value="0.5">0,5 — Dilaceração leve</option>
+                <option value="2">2 — Fratura leve / doença temp.</option>
+                <option value="4">4 — Fratura grave</option>
+                <option value="6">6 — Perda de 1 membro/olho</option>
+                <option value="10">10 — Perda 2 membros / incapacidade</option>
+                <option value="15">15 — Fatalidade / Óbito</option>
+              </select>
+            </div>
+            <div>
+              <label class="lbl">Nº Pessoas (NP)</label>
+              <select id="r-np" onchange="syncRisk()">
+                <option value="1">1 — 1–2 pessoas</option>
+                <option value="2">2 — 3–7 pessoas</option>
+                <option value="4">4 — 8–15 pessoas</option>
+                <option value="8">8 — 16–50 pessoas</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="lbl">Referência Normativa Específica do Ponto</label>
+          <input type="text" id="r-norma" oninput="syncRisk()" />
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+            <label class="lbl" style="margin:0;">Ações Necessárias (1 por linha)</label>
+            <button class="btn btn-primary btn-sm" onclick="voiceFor('r-acoes')">🎙️ Ditar Ação</button>
+          </div>
+          <textarea id="r-acoes" rows="3" oninput="syncRisk()"></textarea>
+        </div>
+        <div>
+          <label class="lbl">Prazo no Plano 5W2H</label>
+          <input type="text" id="r-prazo" oninput="syncRisk()" placeholder="Ex.: Até 60 dias / Imediato" />
+        </div>
+      </div>
+
+      <!-- CALCULADORA ISO 13855 -->
+      <div class="card">
+        <div class="card-title">
+          <span>Calculadora Distância Mínima (NBR ISO 13855)</span>
+          <button class="btn btn-soft btn-sm" onclick="copyIsoToRisk()">+ Jogar no Ponto</button>
+        </div>
+        <div class="grid-3">
+          <div><label class="lbl">K (mm/s)</label><input type="number" id="iso-k" value="1600" oninput="calcIso()" /></div>
+          <div><label class="lbl">T parada (s)</label><input type="number" id="iso-t" step="0.01" value="0.18" oninput="calcIso()" /></div>
+          <div><label class="lbl">C intrusão (mm)</label><input type="number" id="iso-c" value="112" oninput="calcIso()" /></div>
+        </div>
+        <div id="iso-res" style="background:#EFF6FF;color:#1F4E79;font-weight:800;font-size:12px;padding:8px 10px;border-radius:10px;">
+          S = (K × T) + C = 400 mm
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ ABA 3: CHECKLIST NR-12 & ASPECTOS GERAIS ============ -->
+    <div class="tab-panel" id="panel-2">
+      <div class="card" style="background:#1F4E79;color:#fff;">
+        <div style="font-weight:800;font-size:13px;">Checklist NR-12 + Aspectos Gerais (Seção 6 e 7 do Laudo)</div>
+        <div style="font-size:11px;opacity:0.9;">Port. 916/19 • ISO 12100 • NBR 14153/13849-1 • NR-10 • NBR 13930 • NBR 14152 • NBR 13929 • NBR NM ISO 13852/13853 • NBR NM 272 • ISO 13850</div>
+      </div>
+
+      <div id="checklist-container" style="display:flex;flex-direction:column;gap:10px;"></div>
+
+      <button class="btn btn-navy" onclick="addChecklistItem()">+ Adicionar Item ao Checklist</button>
+    </div>
+
+    <!-- ============ ABA 4: LAUDO DOCX & DRIVE ============ -->
+    <div class="tab-panel" id="panel-3">
+      <div class="card">
+        <div class="card-title burgundy">Resumo Executivo da Apreciação NR-12</div>
+        <div class="grid-3" id="summary-stats">
+          <div class="stat-box risk-alto"><div style="font-size:18px" id="st-alto">0</div><div style="font-size:11px">Risco Alto</div></div>
+          <div class="stat-box risk-medio"><div style="font-size:18px" id="st-medio">0</div><div style="font-size:11px">Risco Médio</div></div>
+          <div class="stat-box risk-baixo"><div style="font-size:18px" id="st-baixo">0</div><div style="font-size:11px">Baixo / OK</div></div>
+        </div>
+        <div>
+          <label class="lbl">Síntese Geral &amp; Recomendações Consolidadas</label>
+          <textarea id="rep-sintese" rows="3" oninput="syncReportMeta()"></textarea>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;cursor:pointer;">
+          <input type="checkbox" id="rep-pgr" onchange="syncReportMeta()" style="width:18px;height:18px;" />
+          Integrar Plano de Ação formalmente ao PGR da empresa (Seção 8)
+        </label>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Plano de Ação 5W2H Gerado (<span id="plan-count">0</span> ações)</div>
+        <div id="plan-preview" style="display:flex;flex-direction:column;gap:6px;font-size:12px;"></div>
+      </div>
+
+      <div class="card" style="background:#FFF8F6;border-color:#F8CBAD;">
+        <div class="card-title burgundy">Exportar Laudo Final em .DOCX (Template HardBase)</div>
+        <div style="font-size:12px;color:#334155;line-height:1.4;">
+          Gera arquivo Word (.docx) oficial usando o <strong>cabeçalho e rodapé exatos do Template HardBase</strong>, tabelas padrão HardBase, cores de risco oficiais, fotos com setas + Timemark embutidas e espaço limpo para assinatura digital.
+        </div>
+        <button class="btn btn-navy" style="padding:12px;font-size:14px;" onclick="exportDocx(false)">
+          📄 Gerar &amp; Salvar DOCX no Celular
+        </button>
+        <button class="btn btn-primary" style="padding:12px;font-size:14px;" onclick="exportDocx(true)">
+          ☁️ Gerar DOCX &amp; Enviar p/ Google Drive
+        </button>
+        <button class="btn btn-soft" onclick="window.AndroidBridge && window.AndroidBridge.printPage()">
+          🖨️ Imprimir / Salvar Cópia PDF Rápida
+        </button>
+        <div id="docx-status" style="font-size:12px;font-weight:700;color:#1F4E79;text-align:center;"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RODAPÉ FIXO -->
+  <div class="footer-bar">
+    <span style="font-size:11px;font-weight:700;color:#64748B;" id="save-badge">Salvo offline</span>
+    <button class="btn btn-primary" style="padding:10px 18px;font-size:13px;" onclick="nextTab()">
+      Salvar &amp; Avançar →
+    </button>
+  </div>
+
+</div>
+
+<!-- MODAL GERENCIADOR DE LAUDOS & OTA -->
+<div class="modal-backdrop" id="modal-laudos">
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <strong style="font-size:15px;color:#1F4E79;">Meus Laudos NR-12</strong>
+      <button class="btn btn-soft btn-sm" onclick="closeLaudosModal()">Fechar</button>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-navy" style="flex:1;" onclick="createBlankReport()">+ Novo em Branco</button>
+      <button class="btn btn-burgundy" style="flex:1;" onclick="loadSampleReport()">Carregar Modelo</button>
+    </div>
+    <div id="laudos-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+    <div style="border-top:1px solid #E2E8F0;padding-top:8px;font-size:11px;color:#64748B;display:flex;justify-content:space-between;align-items:center;">
+      <span id="app-ver-label">Versão local: v1</span>
+      <button class="btn btn-soft btn-sm" onclick="checkOtaUpdate()">Verificar Atualização OTA</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const OTA_VERSION_URL = 'https://refrigearcuritiba-png.github.io/hardbase-nr12-pro/version.json';
+const STORAGE_KEY = 'hb_nr12_reports_v1';
+const ACTIVE_KEY = 'hb_nr12_active_id_v1';
+
+const CICLO_OPTS = ['Operação', 'Setup / Troca', 'Manutenção', 'Limpeza', 'Afiação / Ajuste'];
+const ALVO_OPTS = ['Membros Superiores', 'Membros Inferiores', 'Olhos', 'Corpo Inteiro', 'Outros'];
+const CONSEQ_OPTS = ['Corte', 'Fratura', 'Esmagamento', 'Aprisionamento', 'Projeção', 'Óbito', 'Queda', 'Térmico', 'Químico', 'Biológico'];
+
+let currentTab = 0;
+let activeMaqIdx = 0;
+let activeRiskIdx = 0;
+let activeVoiceTarget = null;
+let reports = [];
+let activeReport = null;
+
+// Estado do canvas de foto
+let baseImgObj = null;
+let currentArrowColor = '#EF4444';
+let arrows = [];
+let timemarkOn = true;
+let dragStart = null;
+let dragCur = null;
+let gpsLat = null, gpsLon = null, gpsCity = '';
+
+function todayBr() {
+  const d = new Date();
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  return `${dd}/${mm}/${d.getFullYear()}`;
+}
+
+function nowTime() {
+  const d = new Date();
+  return d.toTimeString().slice(0, 8);
+}
+
+function makeDefaultChecklist() {
+  return [
+    { norma: '6.4 Arranjo Físico (NR-12.2.1)', requisito: 'Áreas de circulação demarcadas e permanentemente desobstruídas', status: 'Atenção', obs: '' },
+    { norma: '6.5 Elétrica (12.3.1 / 12.3.2 / NR-10)', requisito: 'Circuitos de comando/potência seguros e carcaças aterradas', status: 'Não Conforme', obs: '' },
+    { norma: '6.6 Capacitação (NR-12.16.1)', requisito: 'Operadores e manutenção formalmente capacitados e autorizados', status: 'Conforme', obs: '' },
+    { norma: 'Anexo VIII / NBR NM 272 / ISO 14120', requisito: 'Proteções fixas/móveis enclausurando zona de corte e transmissões', status: 'Não Conforme', obs: '' },
+    { norma: 'NR-12.47 / NBR 13929 / ISO 14119', requisito: 'Portas de acesso com intertravamento elétrico monitorado', status: 'Não Conforme', obs: '' },
+    { norma: 'NR-12.56 / ISO 13850', requisito: 'Parada de emergência monitorada por relé/CLP de segurança', status: 'Conforme', obs: '' }
+  ];
+}
+
+function createSampleData() {
+  return {
+    id: 'rep_' + Date.now(),
+    empresa: {
+      razaoSocial: 'EXEMPLO INDÚSTRIA E COMÉRCIO LTDA',
+      cnpj: '00.000.000/0001-00',
+      endereco: 'Rua Exemplo, 100 – Curitiba - PR, CEP 80.000-000',
+      cidadeUf: 'Curitiba - PR',
+      revisao: '0',
+      data: todayBr(),
+      art: ''
+    },
+    integrarPgr: true,
+    sinteseGeral: 'Os pontos de risco com HRN elevado foram classificados como Prioridade Alta com prazo de adequação recomendado de até 60 dias. Pontos conformes demandam manutenção preventiva periódica.',
+    checklist: makeDefaultChecklist(),
+    machines: [
+      {
+        nome: 'Serra Fita',
+        tag: 'SF#001',
+        fabricante: 'Gural',
+        modelo: 'BRT 40',
+        area: 'Açougue Loja 1',
+        serie: 'Q410',
+        comprimento: '800 mm',
+        largura: '870 mm',
+        altura: '1790 mm',
+        ferramenta: '3150 mm × 15,8 mm',
+        peso: '104 kg',
+        mesa: '680 mm × 780 mm',
+        corte: '390 mm × 420 mm',
+        colaboradores: '4',
+        limitesArea: '2 × 3 = 6 m²',
+        potencia: '1,5 CV',
+        tensao: 'Potência: 220Vca / Comando: 24Vcc',
+        ciclo: ['Operação', 'Setup / Troca', 'Limpeza'],
+        s: 'S2', f: 'F2', p: 'P2',
+        plr: 'e', categoriaNpr: '4',
+        risks: [
+          {
+            ponto: 'Lâmina de corte',
+            descricao: 'Zona de corte com movimento contínuo e condução manual de peças pelo operador, com risco de amputações, cortes profundos e projeção de partículas.',
+            alvos: ['Membros Superiores', 'Olhos'],
+            consequencias: ['Corte', 'Fratura', 'Projeção'],
+            lo: 5, fe: 4, dph: 6, np: 2,
+            norma: 'Anexo VIII NR-12 (Serras Fita) / NBR NM 272 / ISO 14120',
+            acoes: 'Instalar protetor ajustável de lâmina conforme Anexo VIII NR-12\nFornecer empurrador/guia fixo para condução segura\nImplementar sistema de freio automático para parada rápida\nTreinar operadores em procedimentos seguros (NR-12.16)',
+            prazo: 'Até 60 dias',
+            iso13855: '',
+            vozNota: '',
+            fotoDataUrl: ''
+          },
+          {
+            ponto: 'Roldana Superior e Inferior (Transmissão)',
+            descricao: 'Portas de proteção com travamento manual simples sem dispositivo de intertravamento, permitindo abertura com a máquina em movimento.',
+            alvos: ['Membros Superiores', 'Membros Inferiores'],
+            consequencias: ['Esmagamento', 'Aprisionamento', 'Fratura'],
+            lo: 5, fe: 4, dph: 6, np: 2,
+            norma: 'NR-12.47 / Anexo VIII / NBR 13929 / ISO 14119',
+            acoes: 'Substituir portas por proteções enclausuradas com chave de intertravamento elétrico monitorada Cat. 4 / PL e',
+            prazo: 'Até 60 dias',
+            iso13855: '',
+            vozNota: '',
+            fotoDataUrl: ''
+          }
+        ]
+      }
+    ]
+  };
+}
+
+function loadReports() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    reports = raw ? JSON.parse(raw) : [];
+  } catch (e) { reports = []; }
+  if (!reports.length) {
+    reports = [createSampleData()];
+  }
+  const aid = localStorage.getItem(ACTIVE_KEY);
+  activeReport = reports.find(r => r.id === aid) || reports[0];
+  saveState();
+}
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
+    localStorage.setItem(ACTIVE_KEY, activeReport.id);
+    const b = document.getElementById('save-badge');
+    if (b) b.textContent = 'Salvo offline • ' + nowTime().slice(0,5);
+  } catch (e) {
+    const b = document.getElementById('save-badge');
+    if (b) b.textContent = 'Memória cheia (remova fotos antigas)';
+  }
+}
+
+function curMaq() {
+  if (!activeReport.machines.length) activeReport.machines.push(createSampleData().machines[0]);
+  if (activeMaqIdx >= activeReport.machines.length) activeMaqIdx = 0;
+  return activeReport.machines[activeMaqIdx];
+}
+
+function curRisk() {
+  const m = curMaq();
+  if (!m.risks.length) m.risks.push({
+    ponto: 'Novo Ponto de Risco', descricao: '', alvos: ['Membros Superiores'],
+    consequencias: ['Corte'], lo: 5, fe: 4, dph: 6, np: 1, norma: 'NR-12', acoes: '', prazo: 'Até 60 dias',
+    iso13855: '', vozNota: '', fotoDataUrl: ''
+  });
+  if (activeRiskIdx >= m.risks.length) activeRiskIdx = 0;
+  return m.risks[activeRiskIdx];
+}
+
+function switchTab(idx) {
+  currentTab = idx;
+  for (let i = 0; i < 4; i++) {
+    document.getElementById('panel-' + i).classList.toggle('active', i === idx);
+    document.getElementById('tab-btn-' + i).classList.toggle('active', i === idx);
+  }
+  document.getElementById('scroll-area').scrollTop = 0;
+  if (idx === 1) renderRiskTab();
+  if (idx === 2) renderChecklistTab();
+  if (idx === 3) renderSummaryTab();
+}
+
+function nextTab() {
+  saveState();
+  switchTab((currentTab + 1) % 4);
+}
+
+function renderAll() {
+  const e = activeReport.empresa;
+  document.getElementById('emp-razao').value = e.razaoSocial || '';
+  document.getElementById('emp-cnpj').value = e.cnpj || '';
+  document.getElementById('emp-end').value = e.endereco || '';
+  document.getElementById('emp-cidade').value = e.cidadeUf || '';
+  document.getElementById('emp-rev').value = e.revisao || '0';
+  document.getElementById('emp-data').value = e.data || todayBr();
+  document.getElementById('emp-art').value = e.art || '';
+  document.getElementById('hdr-client-sub').textContent = (e.razaoSocial || 'Nova Empresa').slice(0, 34);
+  renderMachineForm();
+  renderRiskTab();
+  renderChecklistTab();
+  renderSummaryTab();
+}
+
+function syncCompany() {
+  const e = activeReport.empresa;
+  e.razaoSocial = document.getElementById('emp-razao').value;
+  e.cnpj = document.getElementById('emp-cnpj').value;
+  e.endereco = document.getElementById('emp-end').value;
+  e.cidadeUf = document.getElementById('emp-cidade').value;
+  e.revisao = document.getElementById('emp-rev').value;
+  e.data = document.getElementById('emp-data').value;
+  e.art = document.getElementById('emp-art').value;
+  document.getElementById('hdr-client-sub').textContent = (e.razaoSocial || 'Nova Empresa').slice(0, 34);
+  saveState();
+}
+
+function renderMachineForm() {
+  document.getElementById('maq-count').textContent = activeReport.machines.length;
+  const chips = document.getElementById('machine-chips');
+  chips.innerHTML = '';
+  activeReport.machines.forEach((m, i) => {
+    const b = document.createElement('button');
+    b.className = 'chip' + (i === activeMaqIdx ? ' active' : '');
+    b.textContent = `${i+1}. ${m.tag || 'MAQ'} — ${(m.nome || 'Máquina').slice(0, 14)}`;
+    b.onclick = () => { activeMaqIdx = i; activeRiskIdx = 0; renderMachineForm(); renderRiskTab(); };
+    chips.appendChild(b);
+  });
+
+  const m = curMaq();
+  document.getElementById('maq-nome').value = m.nome || '';
+  document.getElementById('maq-tag').value = m.tag || '';
+  document.getElementById('maq-fab').value = m.fabricante || '';
+  document.getElementById('maq-mod').value = m.modelo || '';
+  document.getElementById('maq-area').value = m.area || '';
+  document.getElementById('maq-serie').value = m.serie || '';
+  document.getElementById('maq-comp').value = m.comprimento || '';
+  document.getElementById('maq-larg').value = m.largura || '';
+  document.getElementById('maq-alt').value = m.altura || '';
+  document.getElementById('maq-ferr').value = m.ferramenta || '';
+  document.getElementById('maq-peso').value = m.peso || '';
+  document.getElementById('maq-mesa').value = m.mesa || '';
+  document.getElementById('maq-corte').value = m.corte || '';
+  document.getElementById('maq-colab').value = m.colaboradores || '';
+  document.getElementById('maq-limites').value = m.limitesArea || '';
+  document.getElementById('maq-pot').value = m.potencia || '';
+  document.getElementById('maq-tensao').value = m.tensao || '';
+  document.getElementById('maq-preset').value = '';
+
+  const cWrap = document.getElementById('ciclo-pills');
+  cWrap.innerHTML = '';
+  CICLO_OPTS.forEach(opt => {
+    const on = (m.ciclo || []).includes(opt);
+    const sp = document.createElement('span');
+    sp.className = 'chip navy' + (on ? ' active' : '');
+    sp.textContent = opt;
+    sp.onclick = () => {
+      m.ciclo = m.ciclo || [];
+      if (m.ciclo.includes(opt)) m.ciclo = m.ciclo.filter(x => x !== opt);
+      else m.ciclo.push(opt);
+      saveState(); renderMachineForm();
+    };
+    cWrap.appendChild(sp);
+  });
+}
+
+function syncMachine() {
+  const m = curMaq();
+  m.nome = document.getElementById('maq-nome').value;
+  m.tag = document.getElementById('maq-tag').value;
+  m.fabricante = document.getElementById('maq-fab').value;
+  m.modelo = document.getElementById('maq-mod').value;
+  m.area = document.getElementById('maq-area').value;
+  m.serie = document.getElementById('maq-serie').value;
+  m.comprimento = document.getElementById('maq-comp').value;
+  m.largura = document.getElementById('maq-larg').value;
+  m.altura = document.getElementById('maq-alt').value;
+  m.ferramenta = document.getElementById('maq-ferr').value;
+  m.peso = document.getElementById('maq-peso').value;
+  m.mesa = document.getElementById('maq-mesa').value;
+  m.corte = document.getElementById('maq-corte').value;
+  m.colaboradores = document.getElementById('maq-colab').value;
+  m.limitesArea = document.getElementById('maq-limites').value;
+  m.potencia = document.getElementById('maq-pot').value;
+  m.tensao = document.getElementById('maq-tensao').value;
+  saveState();
+  // Update chip label cleanly
+  const activeChip = document.getElementById('machine-chips').children[activeMaqIdx];
+  if (activeChip) activeChip.textContent = `${activeMaqIdx+1}. ${m.tag || 'MAQ'} — ${(m.nome || 'Máquina').slice(0, 14)}`;
+}
+
+function addMachine() {
+  const idx = activeReport.machines.length + 1;
+  activeReport.machines.push({
+    nome: 'Nova Máquina ' + idx, tag: 'MAQ#00' + idx, fabricante: '', modelo: '', area: '', serie: '',
+    comprimento: '', largura: '', altura: '', ferramenta: '', peso: '', mesa: '', corte: '',
+    colaboradores: '1', limitesArea: '', potencia: '', tensao: '', ciclo: ['Operação'],
+    s: 'S2', f: 'F2', p: 'P2', plr: 'e', categoriaNpr: '4',
+    risks: [{
+      ponto: 'Zona de Operação', descricao: '', alvos: ['Membros Superiores'],
+      consequencias: ['Corte', 'Esmagamento'], lo: 5, fe: 4, dph: 6, np: 1,
+      norma: 'NR-12 / ISO 12100', acoes: '', prazo: 'Até 60 dias', iso13855: '', vozNota: '', fotoDataUrl: ''
+    }]
+  });
+  activeMaqIdx = activeReport.machines.length - 1;
+  activeRiskIdx = 0;
+  saveState(); renderMachineForm();
+}
+
+function deleteCurrentMachine() {
+  if (activeReport.machines.length <= 1) return alert('O laudo precisa de pelo menos 1 máquina.');
+  if (!confirm('Remover esta máquina e seus riscos?')) return;
+  activeReport.machines.splice(activeMaqIdx, 1);
+  activeMaqIdx = Math.max(0, activeMaqIdx - 1);
+  activeRiskIdx = 0;
+  saveState(); renderMachineForm();
+}
+
+function applyMachinePreset(val) {
+  if (!val) return;
+  const m = curMaq();
+  if (val === 'prensa') {
+    m.nome = 'Prensa Excêntrica / Mecânica';
+    m.risks = [{
+      ponto: 'Zona de Prensagem (Ponto de Operação)',
+      descricao: 'Acesso frontal das mãos na zona de descida do martelo durante alimentação/retirada manual de peças.',
+      alvos: ['Membros Superiores'], consequencias: ['Esmagamento', 'Fratura', 'Corte'],
+      lo: 5, fe: 4, dph: 6, np: 1,
+      norma: 'NR-12 Anexo VIII / ABNT NBR 13930 / ISO 13855 / ISO 13849-1',
+      acoes: 'Instalar cortina de luz Cat. 4 / PL e respeitando distância S (ISO 13855)\nMonitorar via relé/CLP de segurança duplo canal\nProteger pedal de acionamento com cobertura fixa',
+      prazo: 'Imediato (até 30 dias)', iso13855: '', vozNota: '', fotoDataUrl: ''
+    }, {
+      ponto: 'Volante / Polias e Correias (Transmissão)',
+      descricao: 'Partes móveis rotativas acessíveis sem enclausuramento completo.',
+      alvos: ['Membros Superiores'], consequencias: ['Aprisionamento', 'Esmagamento'],
+      lo: 5, fe: 2.5, dph: 6, np: 1, norma: 'NR-12.47 / NBR NM 272 / ISO 14120',
+      acoes: 'Instalar proteção fixa fechada conforme NBR NM ISO 13852 / 13857', prazo: 'Até 60 dias', iso13855: '', vozNota: '', fotoDataUrl: ''
+    }];
+  } else if (val === 'serra_fita') {
+    m.nome = 'Serra Fita';
+    m.risks = createSampleData().machines[0].risks;
+  } else if (val === 'torno') {
+    m.nome = 'Torno / Centro de Usinagem';
+    m.risks = [{
+      ponto: 'Placa Giratória e Ferramenta de Corte',
+      descricao: 'Risco de agarramento/enroscamento na placa e projeção de cavacos em alta velocidade.',
+      alvos: ['Membros Superiores', 'Olhos'], consequencias: ['Aprisionamento', 'Projeção', 'Corte'],
+      lo: 5, fe: 4, dph: 6, np: 1, norma: 'NR-12.38 / NBR NM 272 / ISO 14119',
+      acoes: 'Instalar protetor móvel com intertravamento sobre a placa (Cat. 3/4)\nDotar anteparo contra projeção de cavacos e fluido',
+      prazo: 'Até 60 dias', iso13855: '', vozNota: '', fotoDataUrl: ''
+    }];
+  } else if (val === 'esteira') {
+    m.nome = 'Transportador Contínuo / Esteira';
+    m.risks = [{
+      ponto: 'Tambores de Acionamento / Pontos de Convergência',
+      descricao: 'Pontos entrantes entre correia e tambores/roletes acessíveis ao operador.',
+      alvos: ['Membros Superiores'], consequencias: ['Aprisionamento', 'Esmagamento'],
+      lo: 5, fe: 4, dph: 4, np: 2, norma: 'NR-12.85 a NR-12.93 / ISO 13850',
+      acoes: 'Enclausurar tambores motriz e movido com proteções fixas\nInstalar cabo de parada de emergência ao longo do transportador',
+      prazo: 'Até 60 dias', iso13855: '', vozNota: '', fotoDataUrl: ''
+    }];
+  } else if (val === 'guilhotina') {
+    m.nome = 'Guilhotina / Dobradeira';
+    m.risks = [{
+      ponto: 'Lâmina / Zona de Dobra e Prensa-Chapas',
+      descricao: 'Zona de cisalhamento/dobra frontal aberta sem dispositivo de detecção de presença.',
+      alvos: ['Membros Superiores'], consequencias: ['Corte', 'Esmagamento', 'Fratura'],
+      lo: 8, fe: 4, dph: 6, np: 1, norma: 'NR-12.38 / ISO 13855 / ISO 13849-1',
+      acoes: 'Instalar barreira óptica / proteção frontal intertravada Cat. 4 / PL e e proteção traseira enclausurada',
+      prazo: 'Imediato', iso13855: '', vozNota: '', fotoDataUrl: ''
+    }];
+  }
+  activeRiskIdx = 0;
+  saveState(); renderMachineForm();
+}
+
+function renderRiskTab() {
+  const m = curMaq();
+  document.getElementById('lbl-maq-tag-2').textContent = m.tag || m.nome || 'Máquina';
+  document.getElementById('plr-s').value = m.s || 'S2';
+  document.getElementById('plr-f').value = m.f || 'F2';
+  document.getElementById('plr-p').value = m.p || 'P2';
+  updatePlrDisplay();
+
+  document.getElementById('risk-count').textContent = m.risks.length;
+  const rChips = document.getElementById('risk-chips');
+  rChips.innerHTML = '';
+  m.risks.forEach((r, idx) => {
+    const b = document.createElement('button');
+    b.className = 'chip' + (idx === activeRiskIdx ? ' active' : '');
+    b.textContent = `#${idx+1} ${(r.ponto || 'Ponto').slice(0, 16)}`;
+    b.onclick = () => { activeRiskIdx = idx; renderRiskTab(); };
+    rChips.appendChild(b);
+  });
+
+  const r = curRisk();
+  document.getElementById('r-ponto').value = r.ponto || '';
+  document.getElementById('r-desc').value = r.descricao || '';
+  document.getElementById('r-voz').value = r.vozNota || '';
+  document.getElementById('r-lo').value = String(r.lo ?? 5);
+  document.getElementById('r-fe').value = String(r.fe ?? 4);
+  document.getElementById('r-dph').value = String(r.dph ?? 6);
+  document.getElementById('r-np').value = String(r.np ?? 2);
+  document.getElementById('r-norma').value = r.norma || '';
+  document.getElementById('r-acoes').value = r.acoes || '';
+  document.getElementById('r-prazo').value = r.prazo || 'Até 60 dias';
+  updateHrnBadge();
+
+  renderCheckPills('alvos-grid', ALVO_OPTS, r.alvos || [], (list) => { r.alvos = list; saveState(); });
+  renderCheckPills('conseq-grid', CONSEQ_OPTS, r.consequencias || [], (list) => { r.consequencias = list; saveState(); });
+
+  // Carrega foto no canvas
+  arrows = [];
+  if (r.fotoDataUrl) {
+    loadImageOntoCanvas(r.fotoDataUrl);
+  } else {
+    baseImgObj = null;
+    document.getElementById('photo-canvas').style.display = 'none';
+    document.getElementById('photo-empty').style.display = 'block';
+    document.getElementById('photo-tools').style.display = 'none';
+  }
+}
+
+function renderCheckPills(containerId, options, selectedList, onChange) {
+  const wrap = document.getElementById(containerId);
+  wrap.innerHTML = '';
+  options.forEach(opt => {
+    const isOn = selectedList.includes(opt);
+    const lbl = document.createElement('span');
+    lbl.className = 'chk-pill' + (isOn ? ' checked' : '');
+    lbl.textContent = (isOn ? '☑ ' : '☐ ') + opt;
+    lbl.onclick = () => {
+      const next = isOn ? selectedList.filter(x => x !== opt) : [...selectedList, opt];
+      onChange(next);
+      renderCheckPills(containerId, options, next, onChange);
+    };
+    wrap.appendChild(lbl);
+  });
+}
+
+function syncPlr() {
+  const m = curMaq();
+  m.s = document.getElementById('plr-s').value;
+  m.f = document.getElementById('plr-f').value;
+  m.p = document.getElementById('plr-p').value;
+  const { plr, cat } = computePlr(m.s, m.f, m.p);
+  m.plr = plr;
+  m.categoriaNpr = cat;
+  updatePlrDisplay();
+  saveState();
+}
+
+function computePlr(s, f, p) {
+  if (s === 'S1') {
+    if (f === 'F1') return { plr: p === 'P1' ? 'a' : 'b', cat: p === 'P1' ? 'B' : '1', cls: 'risk-baixo' };
+    return { plr: p === 'P1' ? 'b' : 'c', cat: p === 'P1' ? '1' : '2', cls: 'risk-medio' };
+  }
+  if (f === 'F1') return { plr: p === 'P1' ? 'c' : 'd', cat: p === 'P1' ? '2/3' : '3', cls: p === 'P1' ? 'risk-medio' : 'risk-alto' };
+  return { plr: p === 'P1' ? 'd' : 'e', cat: p === 'P1' ? '3' : '4', cls: 'risk-alto' };
+}
+
+function updatePlrDisplay() {
+  const m = curMaq();
+  const res = computePlr(m.s || 'S2', m.f || 'F2', m.p || 'P2');
+  const box = document.getElementById('plr-result-box');
+  box.className = 'badge ' + res.cls;
+  box.innerHTML = `<span>PLr Requerido: ${res.plr}</span><span>Categoria ${res.cat}</span>`;
+}
+
+function syncRisk() {
+  const r = curRisk();
+  r.ponto = document.getElementById('r-ponto').value;
+  r.descricao = document.getElementById('r-desc').value;
+  r.vozNota = document.getElementById('r-voz').value;
+  r.lo = parseFloat(document.getElementById('r-lo').value);
+  r.fe = parseFloat(document.getElementById('r-fe').value);
+  r.dph = parseFloat(document.getElementById('r-dph').value);
+  r.np = parseFloat(document.getElementById('r-np').value);
+  r.norma = document.getElementById('r-norma').value;
+  r.acoes = document.getElementById('r-acoes').value;
+  r.prazo = document.getElementById('r-prazo').value;
+  updateHrnBadge();
+  saveState();
+  const chip = document.getElementById('risk-chips').children[activeRiskIdx];
+  if (chip) chip.textContent = `#${activeRiskIdx+1} ${(r.ponto || 'Ponto').slice(0, 16)}`;
+}
+
+function updateHrnBadge() {
+  const r = curRisk();
+  const hrn = +( (r.lo || 0) * (r.fe || 0) * (r.dph || 0) * (r.np || 0) ).toFixed(2);
+  const badge = document.getElementById('hrn-badge');
+  if (hrn > 50) {
+    badge.className = 'badge risk-alto'; badge.textContent = `Alto (${hrn})`;
+  } else if (hrn > 5) {
+    badge.className = 'badge risk-medio'; badge.textContent = `Médio (${hrn})`;
+  } else {
+    badge.className = 'badge risk-baixo'; badge.textContent = `Baixo (${hrn})`;
+  }
+}
+
+function addRiskPoint() {
+  const m = curMaq();
+  m.risks.push({
+    ponto: 'Ponto de Risco #' + (m.risks.length + 1), descricao: '', alvos: ['Membros Superiores'],
+    consequencias: ['Corte'], lo: 5, fe: 4, dph: 6, np: 1, norma: 'NR-12', acoes: '', prazo: 'Até 60 dias',
+    iso13855: '', vozNota: '', fotoDataUrl: ''
+  });
+  activeRiskIdx = m.risks.length - 1;
+  saveState(); renderRiskTab();
+}
+
+function deleteCurrentRisk() {
+  const m = curMaq();
+  if (m.risks.length <= 1) return alert('Cada máquina precisa de pelo menos 1 ponto de risco.');
+  m.risks.splice(activeRiskIdx, 1);
+  activeRiskIdx = Math.max(0, activeRiskIdx - 1);
+  saveState(); renderRiskTab();
+}
+
+function calcIso() {
+  const k = parseFloat(document.getElementById('iso-k').value) || 0;
+  const t = parseFloat(document.getElementById('iso-t').value) || 0;
+  const c = parseFloat(document.getElementById('iso-c').value) || 0;
+  const s = Math.round(k * t + c);
+  document.getElementById('iso-res').textContent = `S = (${k} × ${t}) + ${c} = ${s} mm`;
+  return s;
+}
+
+function copyIsoToRisk() {
+  const s = calcIso();
+  const r = curRisk();
+  r.iso13855 = document.getElementById('iso-res').textContent;
+  const line = `Posicionar barreira / comando bimanual a distância mínima S = ${s} mm (ABNT NBR ISO 13855)`;
+  r.acoes = r.acoes ? (r.acoes + '\n' + line) : line;
+  document.getElementById('r-acoes').value = r.acoes;
+  saveState();
+  alert('Distância ISO 13855 vinculada às ações deste ponto!');
+}
+
+// ============ VOZ NATIVA ============
+function voiceFor(elId) {
+  activeVoiceTarget = elId;
+  if (window.AndroidBridge && window.AndroidBridge.startVoiceNote) {
+    window.AndroidBridge.startVoiceNote('Fale a observação técnica NR-12...');
+  } else {
+    alert('No aparelho Android, abre o ditado nativo em Português (pt-BR).');
+  }
+}
+
+window.__onNativeVoiceResult = function(spoken) {
+  if (!spoken || !activeVoiceTarget) return;
+  const el = document.getElementById(activeVoiceTarget);
+  if (!el) return;
+  el.value = el.value ? (el.value.trim() + ' ' + spoken) : spoken;
+  el.dispatchEvent(new Event('input'));
+};
+window.__onNativeVoiceError = function(msg) { if (msg) alert(msg); };
+
+// ============ FOTO + SETAS + TIMEMARK ============
+function onPhotoSelected(input) {
+  const file = input.files && input.files[0];
+  input.value = '';
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    arrows = [];
+    loadImageOntoCanvas(ev.target.result, true);
+    refreshGps();
+  };
+  reader.readAsDataURL(file);
+}
+
+function loadImageOntoCanvas(dataUrl, persist) {
+  const img = new Image();
+  img.onload = function() {
+    baseImgObj = img;
+    const canvas = document.getElementById('photo-canvas');
+    const maxW = 1080;
+    const scale = img.width > maxW ? (maxW / img.width) : 1;
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+    document.getElementById('photo-empty').style.display = 'none';
+    canvas.style.display = 'block';
+    document.getElementById('photo-tools').style.display = 'flex';
+    drawCanvas(persist);
+  };
+  img.src = dataUrl;
+}
+
+function drawCanvas(persist) {
+  if (!baseImgObj) return;
+  const canvas = document.getElementById('photo-canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(baseImgObj, 0, 0, canvas.width, canvas.height);
+
+  // Setas
+  const all = dragStart && dragCur ? [...arrows, { x1: dragStart.x, y1: dragStart.y, x2: dragCur.x, y2: dragCur.y, color: currentArrowColor }] : arrows;
+  const lw = Math.max(4, Math.round(canvas.width * 0.008));
+  all.forEach(a => drawArrow(ctx, a.x1, a.y1, a.x2, a.y2, a.color, lw));
+
+  // Timemark stamp
+  if (timemarkOn) {
+    const w = canvas.width, h = canvas.height;
+    const fsBig = Math.max(18, Math.round(w * 0.036));
+    const fsSub = Math.max(12, Math.round(w * 0.02));
+    const pad = Math.round(w * 0.02);
+    const boxW = Math.round(w * 0.62);
+    const boxH = fsBig + fsSub * 2.8 + pad * 1.4;
+    const bx = pad, by = h - boxH - pad;
+
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.72)';
+    ctx.fillRect(bx, by, boxW, boxH);
+    ctx.fillStyle = '#F59E0B';
+    ctx.fillRect(bx, by, Math.max(4, Math.round(w * 0.008)), boxH);
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = `bold ${fsBig}px Arial`;
+    ctx.fillText(nowTime(), bx + pad, by + fsBig + 4);
+    ctx.fillStyle = '#FBBF24';
+    ctx.font = `bold ${fsSub}px Arial`;
+    ctx.fillText(' ' + todayBr(), bx + pad + ctx.measureText(nowTime()).width + 8, by + fsBig + 2);
+
+    ctx.fillStyle = '#E2E8F0';
+    ctx.font = `${fsSub}px Arial`;
+    const m = curMaq();
+    const r = curRisk();
+    const line1 = `${m.tag || m.nome || 'NR-12'} — ${(r.ponto || '').slice(0, 32)}`;
+    const line2 = gpsLat ? `GPS ${gpsLat.toFixed(5)}, ${gpsLon.toFixed(5)} ${gpsCity}` : (activeReport.empresa.cidadeUf || 'HardBase Engenharia');
+    ctx.fillText(line1, bx + pad, by + fsBig + fsSub * 1.4);
+    ctx.fillText(line2, bx + pad, by + fsBig + fsSub * 2.6);
+  }
+
+  if (persist) {
+    curRisk().fotoDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+    saveState();
+  }
+}
+
+function drawArrow(ctx, x1, y1, x2, y2, color, lw) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const dist = Math.hypot(dx, dy);
+  if (dist < 10) return;
+  const angle = Math.atan2(dy, dx);
+  const headLen = Math.max(16, lw * 3.8);
+  ctx.save();
+  ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = lw; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - headLen * Math.cos(angle - Math.PI / 6), y2 - headLen * Math.sin(angle - Math.PI / 6));
+  ctx.lineTo(x2 - headLen * Math.cos(angle + Math.PI / 6), y2 - headLen * Math.sin(angle + Math.PI / 6));
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+(function bindCanvasEvents() {
+  const canvas = document.getElementById('photo-canvas');
+  function pt(e) {
+    const rect = canvas.getBoundingClientRect();
+    const t = e.touches ? e.touches[0] : e;
+    return {
+      x: (t.clientX - rect.left) * (canvas.width / rect.width),
+      y: (t.clientY - rect.top) * (canvas.height / rect.height)
+    };
+  }
+  canvas.addEventListener('pointerdown', e => {
+    if (!baseImgObj) return;
+    e.preventDefault();
+    dragStart = pt(e); dragCur = dragStart;
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (!dragStart) return;
+    e.preventDefault();
+    dragCur = pt(e); drawCanvas(false);
+  });
+  canvas.addEventListener('pointerup', e => {
+    if (!dragStart) return;
+    e.preventDefault();
+    const p = pt(e);
+    const dist = Math.hypot(p.x - dragStart.x, p.y - dragStart.y);
+    if (dist < 12) {
+      // Toque simples cria uma seta padrão apontando para onde tocou
+      const len = Math.max(55, canvas.width * 0.14);
+      arrows.push({ x1: p.x - len * 0.7, y1: p.y - len * 0.7, x2: p.x, y2: p.y, color: currentArrowColor });
+    } else {
+      arrows.push({ x1: dragStart.x, y1: dragStart.y, x2: p.x, y2: p.y, color: currentArrowColor });
+    }
+    dragStart = null; dragCur = null;
+    drawCanvas(true);
+  });
+})();
+
+function setArrowColor(c, el) {
+  currentArrowColor = c;
+  document.querySelectorAll('.dot').forEach(d => d.classList.remove('active'));
+  el.classList.add('active');
+}
+function undoArrow() { arrows.pop(); drawCanvas(true); }
+function clearArrows() { arrows = []; drawCanvas(true); }
+function toggleTimemark() {
+  timemarkOn = !timemarkOn;
+  document.getElementById('btn-timemark').textContent = timemarkOn ? 'Carimbo: ON' : 'Carimbo: OFF';
+  drawCanvas(true);
+}
+function refreshGps() {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(pos => {
+    gpsLat = pos.coords.latitude;
+    gpsLon = pos.coords.longitude;
+    drawCanvas(true);
+  }, () => {}, { enableHighAccuracy: true, timeout: 6000 });
+}
+function savePhotoToDevice() {
+  if (!baseImgObj) return;
+  drawCanvas(true);
+  const url = document.getElementById('photo-canvas').toDataURL('image/jpeg', 0.9);
+  const b64 = url.split(',')[1];
+  const m = curMaq();
+  const fname = `NR12_${(m.tag || 'MAQ').replace(/[^a-zA-Z0-9]/g,'')}_R${activeRiskIdx+1}_${Date.now()}.jpg`;
+  if (window.AndroidBridge && window.AndroidBridge.savePhotoToGallery) {
+    const ok = window.AndroidBridge.savePhotoToGallery(b64, fname);
+    alert(ok ? `Foto salva em Pictures/HardBaseNR12Pro/${fname}` : 'Erro ao salvar foto.');
+  }
+}
+
+// ============ ABA 3: CHECKLIST ============
+function renderChecklistTab() {
+  const wrap = document.getElementById('checklist-container');
+  wrap.innerHTML = '';
+  (activeReport.checklist || []).forEach((item, idx) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    const stCls = item.status === 'Conforme' ? 'risk-baixo' : item.status === 'Atenção' ? 'risk-medio' : 'risk-alto';
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+        <input type="text" value="${escAttr(item.norma)}" onchange="updateChk(${idx},'norma',this.value)" style="font-weight:800;color:#7D1820;font-size:12px;border:none;padding:2px 0;" />
+        <span class="badge ${stCls}" style="font-size:11px;flex-shrink:0;">${item.status}</span>
+      </div>
+      <input type="text" value="${escAttr(item.requisito)}" onchange="updateChk(${idx},'requisito',this.value)" style="font-size:12px;font-weight:600;" />
+      <div style="display:flex;gap:6px;align-items:center;">
+        <select onchange="updateChk(${idx},'status',this.value)" style="width:140px;font-size:12px;font-weight:700;">
+          <option ${item.status==='Conforme'?'selected':''}>Conforme</option>
+          <option ${item.status==='Não Conforme'?'selected':''}>Não Conforme</option>
+          <option ${item.status==='Atenção'?'selected':''}>Atenção</option>
+          <option ${item.status==='N/A'?'selected':''}>N/A</option>
+        </select>
+        <input type="text" value="${escAttr(item.obs||'')}" placeholder="Observação..." oninput="updateChk(${idx},'obs',this.value)" style="font-size:12px;" />
+      </div>
+    `;
+    wrap.appendChild(card);
+  });
+}
+
+function updateChk(idx, field, val) {
+  activeReport.checklist[idx][field] = val;
+  saveState();
+  if (field === 'status') renderChecklistTab();
+}
+function addChecklistItem() {
+  activeReport.checklist.push({ norma: 'NR-12', requisito: 'Novo requisito verificado em campo', status: 'Não Conforme', obs: '' });
+  saveState(); renderChecklistTab();
+}
+
+// ============ ABA 4: RESUMO & EXPORT DOCX ============
+function renderSummaryTab() {
+  let altos = 0, medios = 0, baixos = 0, planHtml = '', planCount = 0;
+  activeReport.machines.forEach(m => {
+    (m.risks || []).forEach(r => {
+      const hrn = (r.lo || 0) * (r.fe || 0) * (r.dph || 0) * (r.np || 0);
+      let cls = 'risk-baixo', prio = 'BAIXA';
+      if (hrn > 50) { altos++; cls = 'risk-alto'; prio = 'ALTA'; }
+      else if (hrn > 5) { medios++; cls = 'risk-medio'; prio = 'MÉDIA'; }
+      else { baixos++; }
+      planCount++;
+      planHtml += `
+        <div style="padding:8px;border-radius:10px;border:1px solid #E2E8F0;background:#F8FAFC;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+            <strong style="color:#7D1820;">${escHtml(m.tag || m.nome)} — ${escHtml(r.ponto)}</strong>
+            <span class="badge ${cls}" style="font-size:10px;">${prio} (${Math.round(hrn)})</span>
+          </div>
+          <div style="color:#334155;">${escHtml((r.acoes || 'Definir ações').replace(/\n/g, ' • '))}</div>
+        </div>
+      `;
+    });
+  });
+  document.getElementById('st-alto').textContent = altos;
+  document.getElementById('st-medio').textContent = medios;
+  document.getElementById('st-baixo').textContent = baixos;
+  document.getElementById('plan-count').textContent = planCount;
+  document.getElementById('plan-preview').innerHTML = planHtml || '<div style="color:#64748B;">Nenhum ponto cadastrado.</div>';
+  document.getElementById('rep-sintese').value = activeReport.sinteseGeral || '';
+  document.getElementById('rep-pgr').checked = activeReport.integrarPgr !== false;
+}
+
+function syncReportMeta() {
+  activeReport.sinteseGeral = document.getElementById('rep-sintese').value;
+  activeReport.integrarPgr = document.getElementById('rep-pgr').checked;
+  saveState();
+}
+
+function buildDocxPayload() {
+  const payload = JSON.parse(JSON.stringify(activeReport));
+  payload.machines = payload.machines.map(m => {
+    const res = computePlr(m.s || 'S2', m.f || 'F2', m.p || 'P2');
+    m.plrSummary = `Cat. ${res.cat} / PLr ${res.plr}`;
+    m.cicloVida = (m.ciclo || []).join(', ');
+    m.risks = (m.risks || []).map(r => {
+      const hrn = +((r.lo || 0) * (r.fe || 0) * (r.dph || 0) * (r.np || 0)).toFixed(2);
+      r.hrn = hrn;
+      r.nivel = hrn > 50 ? 'Alto' : (hrn > 5 ? 'Médio' : 'Baixo');
+      r.alvos = Array.isArray(r.alvos) ? r.alvos.join(' | ') : (r.alvos || '');
+      r.consequencias = Array.isArray(r.consequencias) ? r.consequencias.join(' | ') : (r.consequencias || '');
+      r.loLabel = `Peso ${r.lo}`;
+      r.feLabel = `Peso ${r.fe}`;
+      r.dphLabel = `Peso ${r.dph}`;
+      r.npLabel = `Peso ${r.np}`;
+      return r;
+    });
+    return m;
+  });
+  return JSON.stringify(payload);
+}
+
+function exportDocx(shareToDrive) {
+  saveState();
+  const statusEl = document.getElementById('docx-status');
+  statusEl.textContent = 'Gerando .DOCX com cabeçalho e rodapé oficiais HardBase...';
+  const empClean = (activeReport.empresa.razaoSocial || 'Empresa').replace(/[^a-zA-Z0-9_-]/g, '_').replace(/_+/g, '_').slice(0, 32);
+  const fileName = `Apreciacao_NR12_${empClean}.docx`;
+  const payload = buildDocxPayload();
+
+  if (window.AndroidBridge && window.AndroidBridge.generateAndSaveDocx) {
+    window.AndroidBridge.generateAndSaveDocx(payload, fileName, !!shareToDrive);
+  } else {
+    statusEl.textContent = 'Disponível no aplicativo Android instalado.';
+  }
+}
+
+window.__onDocxResult = function(ok, msg) {
+  const statusEl = document.getElementById('docx-status');
+  statusEl.style.color = ok ? '#15803D' : '#991B1B';
+  statusEl.textContent = ok ? `✅ Arquivo salvo em Downloads/HardBaseNR12Pro/${msg}` : `❌ Falha: ${msg}`;
+};
+
+// ============ MODAL LAUDOS & OTA ============
+function openLaudosModal() {
+  const list = document.getElementById('laudos-list');
+  list.innerHTML = '';
+  reports.forEach(rep => {
+    const isAct = rep.id === activeReport.id;
+    const row = document.createElement('div');
+    row.style.cssText = `padding:10px;border-radius:10px;border:1px solid ${isAct ? '#7D1820' : '#CBD5E1'};background:${isAct ? '#FFF1F2' : '#F8FAFC'};display:flex;justify-content:space-between;align-items:center;gap:8px;`;
+    row.innerHTML = `
+      <div style="min-width:0;flex:1;cursor:pointer;" onclick="selectReport('${rep.id}')">
+        <div style="font-weight:800;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(rep.empresa.razaoSocial || 'Sem nome')}</div>
+        <div style="font-size:11px;color:#64748B;">${rep.machines.length} máq. • ${rep.empresa.data || ''}</div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="deleteReport('${rep.id}')">X</button>
+    `;
+    list.appendChild(row);
+  });
+  const ver = window.AndroidBridge ? window.AndroidBridge.getAppVersionCode() : 1;
+  document.getElementById('app-ver-label').textContent = 'Versão local: v' + ver;
+  document.getElementById('modal-laudos').classList.add('open');
+}
+function closeLaudosModal() { document.getElementById('modal-laudos').classList.remove('open'); }
+function selectReport(id) {
+  activeReport = reports.find(r => r.id === id) || reports[0];
+  activeMaqIdx = 0; activeRiskIdx = 0;
+  saveState(); renderAll(); closeLaudosModal();
+}
+function deleteReport(id) {
+  if (reports.length <= 1) return alert('Mantenha pelo menos 1 laudo.');
+  reports = reports.filter(r => r.id !== id);
+  if (activeReport.id === id) activeReport = reports[0];
+  saveState(); openLaudosModal(); renderAll();
+}
+function createBlankReport() {
+  const r = createSampleData();
+  r.empresa = { razaoSocial: '', cnpj: '', endereco: '', cidadeUf: 'Curitiba - PR', revisao: '0', data: todayBr(), art: '' };
+  r.machines = [{
+    nome: 'Máquina 01', tag: 'MAQ#001', fabricante: '', modelo: '', area: '', serie: '',
+    comprimento: '', largura: '', altura: '', ferramenta: '', peso: '', mesa: '', corte: '',
+    colaboradores: '1', limitesArea: '', potencia: '', tensao: '', ciclo: ['Operação'],
+    s: 'S2', f: 'F2', p: 'P2', plr: 'e', categoriaNpr: '4',
+    risks: [{ ponto: 'Ponto de Risco #1', descricao: '', alvos: ['Membros Superiores'], consequencias: ['Corte'], lo: 5, fe: 4, dph: 6, np: 1, norma: 'NR-12', acoes: '', prazo: 'Até 60 dias', iso13855: '', vozNota: '', fotoDataUrl: '' }]
+  }];
+  reports.unshift(r);
+  activeReport = r; activeMaqIdx = 0; activeRiskIdx = 0;
+  saveState(); renderAll(); closeLaudosModal();
+}
+function loadSampleReport() {
+  const r = createSampleData();
+  reports.unshift(r);
+  activeReport = r; activeMaqIdx = 0; activeRiskIdx = 0;
+  saveState(); renderAll(); closeLaudosModal();
+}
+
+function checkOtaUpdate() {
+  if (window.AndroidBridge && window.AndroidBridge.checkAndInstallUpdate) {
+    window.AndroidBridge.checkAndInstallUpdate(OTA_VERSION_URL);
+  }
+}
+window.__onUpdateStatus = function(status, version, notes) {
+  if (status === 'updated') {
+    alert(`Atualização v${version} instalada! ${notes || ''} O app será recarregado.`);
+    window.AndroidBridge && window.AndroidBridge.reloadApp();
+  } else {
+    alert(notes || 'Sem atualizações pendentes.');
+  }
+};
+window.__onAndroidBack = function() {
+  const modal = document.getElementById('modal-laudos');
+  if (modal.classList.contains('open')) { closeLaudosModal(); return 'handled'; }
+  if (currentTab > 0) { switchTab(currentTab - 1); return 'handled'; }
+  return 'exit';
+};
+
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(s) { return escHtml(s).replace(/"/g,'&quot;'); }
+
+loadReports();
+renderAll();
+calcIso();
+</script>
+</body>
+</html>
